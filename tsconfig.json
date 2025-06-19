@@ -13,6 +13,9 @@
     "**/*.tsx",
     "**/*.jsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "app/tabs/HomeTab.js", "app/Components/Footer.js"  ]
+    "expo-env.d.ts",
+    "app/tabs/HomeTab.js",
+    "app/Components/Footer.js",
+    "App.js"
+  ]
 }
