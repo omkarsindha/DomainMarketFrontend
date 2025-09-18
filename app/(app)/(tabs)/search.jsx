@@ -12,6 +12,12 @@ import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS, ICON_SIZES, SCREEN_HEIGHT } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
 
+const TldCard = ({ tld }) => (
+  <View style={[globalStyles.card, styles.domainCardBase]}>
+    <Text style={styles.domainCardName}>{tld}</Text>
+  </View>
+);
+
 const DomainCard = ({ item, onPress, onToggleFavorite, isFavorite }) => (
   <Pressable
     style={({ pressed }) => [globalStyles.card, styles.domainCardBase, pressed && { backgroundColor: COLORS.lightBg }]}
@@ -89,7 +95,8 @@ const SearchPage = () => {
 
   const handleSearchDomain = async () => {
     Keyboard.dismiss();
-    if (!searchQuery.trim()) {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    if (!trimmedQuery) {
       setError("Please enter a domain name.");
       return;
     }
@@ -103,16 +110,18 @@ const SearchPage = () => {
         handleAuthenticationError();
         return;
       }
-      const data = await checkDomainAvailability(searchQuery.trim().toLowerCase());
-      if (data.domain) {
-        setSearchedDomainResult(data.domain);
-        if (!data.domain.is_available) {
-          setError(`"${data.domain.domain}" is unavailable. Check suggestions below.`);
-        }
-      } else {
-        setError(`Could not get details for "${searchQuery}".`);
-      }
+      const data = await checkDomainAvailability(trimmedQuery);
       setSuggestedDomains(data.suggestions || []);
+
+      if (data.domain) {
+        setSearchedDomainResult({ ...data.domain, is_available: true });
+      } else {
+        if (data.suggestions && data.suggestions.length > 0) {
+          setError(`"${trimmedQuery}" is unavailable. Check suggestions below.`);
+        } else {
+          setError(`Could not get details for "${trimmedQuery}".`);
+        }
+      }
     } catch (err) {
       console.error("Error searching domain:", err);
       if (err.message.includes("Unauthorized") || err.message.includes("401")) {
@@ -132,70 +141,83 @@ const SearchPage = () => {
     });
   };
 
-  const handleTldPress = (tld) => {
-    const baseName = searchQuery.split('.')[0] || "search";
-    const newQuery = `${baseName}${tld}`;
-    setSearchQuery(newQuery);
-  };
-
-  const renderResults = () => {
-    if (!loadingSearch && !searchedDomainResult && suggestedDomains.length === 0 && !error && !searchQuery.trim()) {
-      if (loadingTlds) return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
-      if (trendingTlds.length > 0) {
-        return (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Popular TLDs</Text>
-            <View style={styles.tldContainer}>
-              {trendingTlds.map(tldItem => (
-                <TouchableOpacity key={tldItem.tld} style={styles.tldChip} onPress={() => handleTldPress(tldItem.tld)}>
-                  <Text style={styles.tldText}>{tldItem.tld}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        );
+  // This component renders the initial state (TLD list)
+  const renderInitialView = () => {
+    if (loadingTlds) {
+      return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
+    }
+    if (trendingTlds.length > 0) {
+      const tldCards = [];
+      const loopCount = Math.min(trendingTlds.length, 10);
+      for (let i = 0; i < loopCount; i++) {
+        const tldItem = trendingTlds[i];
+        tldCards.push(<TldCard key={tldItem} tld={tldItem} />);
       }
-      return <Text style={styles.infoText}>Start by searching for a domain or selecting a TLD.</Text>;
+      return (
+        // Use a ScrollView here, as it's safe (no nested lists)
+        <ScrollView contentContainerStyle={styles.resultsScrollContent}>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Top 10 Popular TLDs</Text>
+            {tldCards}
+          </View>
+        </ScrollView>
+      );
+    }
+    return <Text style={styles.infoText}>Start by searching for a domain or selecting a TLD.</Text>;
+  }
+
+  // This component renders everything that appears *above* the suggestions list.
+  const renderListHeader = () => (
+    <>
+      {searchedDomainResult && (
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Direct Match</Text>
+          <DomainCard
+            item={searchedDomainResult}
+            onPress={handleDomainSelect}
+            onToggleFavorite={toggleFavorite}
+            isFavorite={isDomainFavoriteGlobally(searchedDomainResult.domain)}
+          />
+        </View>
+      )}
+      {suggestedDomains.length > 0 && (
+        <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>Suggestions</Text>
+      )}
+    </>
+  );
+
+  const renderContent = () => {
+    const hasSearchResults = searchedDomainResult || suggestedDomains.length > 0;
+
+    if (loadingSearch) {
+      return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
     }
 
-    if (loadingSearch) return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
+    if (!hasSearchResults) {
+      // If there are no search results, show the initial view or "no results" text
+      return renderInitialView();
+    }
 
+    // If we have results, use a FlatList as the main scroll container
     return (
-      <>
-        {searchedDomainResult && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Direct Match</Text>
-            <DomainCard
-              item={searchedDomainResult}
-              onPress={handleDomainSelect}
-              onToggleFavorite={toggleFavorite}
-              isFavorite={isDomainFavoriteGlobally(searchedDomainResult.domain)}
-            />
-          </View>
+      <FlatList
+        data={suggestedDomains}
+        keyExtractor={(item) => item.domain}
+        renderItem={({ item }) => (
+          <DomainCard
+            item={item}
+            onPress={handleDomainSelect}
+            onToggleFavorite={toggleFavorite}
+            isFavorite={isDomainFavoriteGlobally(item.domain)}
+          />
         )}
-        {suggestedDomains.length > 0 && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Suggestions</Text>
-            <FlatList
-              data={suggestedDomains}
-              keyExtractor={(item, index) => item.domain || `suggestion-${index}`}
-              renderItem={({ item }) => (
-                <DomainCard
-                  item={item}
-                  onPress={handleDomainSelect}
-                  onToggleFavorite={toggleFavorite}
-                  isFavorite={isDomainFavoriteGlobally(item.domain)}
-                />
-              )}
-            />
-          </View>
-        )}
-        {!searchedDomainResult && suggestedDomains.length === 0 && error && !error.includes("unavailable") && (
-          <Text style={styles.infoText}>No suggestions found for this search.</Text>
-        )}
-      </>
+        ListHeaderComponent={renderListHeader}
+        contentContainerStyle={styles.resultsScrollContent}
+        showsVerticalScrollIndicator={false}
+      />
     );
   };
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -224,14 +246,10 @@ const SearchPage = () => {
           </View>
         )}
 
-        <ScrollView
-          style={styles.resultsScroll}
-          contentContainerStyle={styles.resultsScrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {renderResults()}
-        </ScrollView>
+        {/* The main content area now uses conditional rendering to avoid nesting scroll views */}
+        <View style={styles.resultsContainer}>
+          {renderContent()}
+        </View>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -241,12 +259,15 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
   gradientBg: { flex: 1 },
   searchBarContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, backgroundColor: COLORS.mediumBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  searchInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: Platform.OS === 'ios' ? SPACING.sm + 2 : SPACING.sm, fontSize: FONT_SIZES.md, backgroundColor: COLORS.darkBg, color: COLORS.textPrimary, marginRight: SPACING.sm, height: 48 /* Consistent height */ },
+  searchInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: Platform.OS === 'ios' ? SPACING.sm + 2 : SPACING.sm, fontSize: FONT_SIZES.md, backgroundColor: COLORS.darkBg, color: COLORS.textPrimary, marginRight: SPACING.sm, height: 48 },
   searchButton: { backgroundColor: COLORS.primaryGreen, padding: SPACING.sm + 2, borderRadius: BORDER_RADIUS.md, justifyContent: 'center', alignItems: 'center', height: 48, width: 48 },
   errorDisplayContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.errorBackground, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, marginHorizontal: SPACING.md, marginTop: SPACING.md, borderRadius: BORDER_RADIUS.sm, borderLeftWidth: 3, borderLeftColor: COLORS.errorBorder },
   errorTextMsg: { color: COLORS.error, fontSize: FONT_SIZES.sm, flex: 1 },
-  resultsScroll: { flex: 1 },
-  resultsScrollContent: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
+  // New container style to manage the results area
+  resultsContainer: {
+    flex: 1,
+  },
+  resultsScrollContent: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl, paddingTop: SPACING.sm },
   sectionContainer: { marginTop: SPACING.lg },
   sectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: "bold", color: COLORS.primaryGreen, marginBottom: SPACING.sm },
   domainCardBase: { marginBottom: SPACING.sm, padding: SPACING.md, backgroundColor: COLORS.mediumBg },
@@ -259,9 +280,6 @@ const styles = StyleSheet.create({
   availabilityText: { fontSize: FONT_SIZES.xs, fontWeight: '600', marginTop: SPACING.sm, textAlign: 'right' },
   available: { color: COLORS.primaryGreenDark },
   unavailable: { color: COLORS.error },
-  tldContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.xs },
-  tldChip: { backgroundColor: COLORS.mediumBg, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: COLORS.primaryGreen },
-  tldText: { color: COLORS.primaryGreen, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   infoText: { textAlign: 'center', color: COLORS.textSecondary, fontSize: FONT_SIZES.md, marginTop: SPACING.xl, paddingHorizontal: SPACING.lg },
 });
 
