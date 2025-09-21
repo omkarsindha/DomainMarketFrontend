@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollVi
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { checkDomainAvailability, fetchTrendingTldsService } from '../../../src/services/domainService';
+import { checkDomainAvailability, fetchTrendingDomains } from '../../../src/services/domainService';
 import { getToken }
   from '../../../src/services/authService';
 import { useAuth } from '../../_layout';
@@ -11,12 +11,6 @@ import { useFavorites } from '../../../src/context/FavoritesContext';
 import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS, ICON_SIZES, SCREEN_HEIGHT } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
-
-const TldCard = ({ tld }) => (
-  <View style={[globalStyles.card, styles.domainCardBase]}>
-    <Text style={styles.domainCardName}>{tld}</Text>
-  </View>
-);
 
 const DomainCard = ({ item, onPress, onToggleFavorite, isFavorite }) => (
   <Pressable
@@ -50,9 +44,9 @@ const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchedDomainResult, setSearchedDomainResult] = useState(null);
   const [suggestedDomains, setSuggestedDomains] = useState([]);
-  const [trendingTlds, setTrendingTlds] = useState([]);
+  const [trendingDomains, setTrendingDomains] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
-  const [loadingTlds, setLoadingTlds] = useState(true);
+  const [loadingTrending, setLoadingTrending] = useState(true);
   const [error, setError] = useState(null);
 
   const handleAuthenticationError = useCallback(async () => {
@@ -67,36 +61,40 @@ const SearchPage = () => {
     );
   }, [contextLogout]);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoadingTlds(true);
-      setError(null);
-      try {
-        const token = await getToken();
-        if (!token) {
-          handleAuthenticationError();
-          return;
+  useFocusEffect(
+    useCallback(() => {
+      const fetchInitialData = async () => {
+        if (searchQuery.trim() === '' && !searchedDomainResult) {
+          setLoadingTrending(true);
+          setError(null);
+          try {
+            const token = await getToken();
+            if (!token) {
+              handleAuthenticationError();
+              return;
+            }
+            const trendingData = await fetchTrendingDomains();
+            setTrendingDomains(trendingData || []);
+          } catch (err) {
+            console.error("Error fetching trending domains:", err);
+            if (err.message.includes("Unauthorized") || err.message.includes("401")) {
+              handleAuthenticationError();
+            } else {
+              setError("Failed to fetch trending domains.");
+            }
+          } finally {
+            setLoadingTrending(false);
+          }
         }
-        const tldsData = await fetchTrendingTldsService();
-        setTrendingTlds(tldsData || []);
-      } catch (err) {
-        console.error("Error fetching trending TLDs:", err);
-        if (err.message.includes("Unauthorized") || err.message.includes("401")) {
-          handleAuthenticationError();
-        } else {
-          setError("Failed to fetch trending TLDs.");
-        }
-      } finally {
-        setLoadingTlds(false);
-      }
-    };
-    fetchInitialData();
-  }, [handleAuthenticationError]);
+      };
+      fetchInitialData();
+    }, [handleAuthenticationError, searchQuery, searchedDomainResult])
+  );
+
 
   const handleSearchDomain = async () => {
     Keyboard.dismiss();
-    const trimmedQuery = searchQuery.trim().toLowerCase();
-    if (!trimmedQuery) {
+    if (!searchQuery.trim()) {
       setError("Please enter a domain name.");
       return;
     }
@@ -110,18 +108,16 @@ const SearchPage = () => {
         handleAuthenticationError();
         return;
       }
-      const data = await checkDomainAvailability(trimmedQuery);
-      setSuggestedDomains(data.suggestions || []);
-
+      const data = await checkDomainAvailability(searchQuery.trim().toLowerCase());
       if (data.domain) {
-        setSearchedDomainResult({ ...data.domain, is_available: true });
-      } else {
-        if (data.suggestions && data.suggestions.length > 0) {
-          setError(`"${trimmedQuery}" is unavailable. Check suggestions below.`);
-        } else {
-          setError(`Could not get details for "${trimmedQuery}".`);
+        setSearchedDomainResult(data.domain);
+        if (!data.domain.is_available) {
+          setError(`"${data.domain.domain}" is unavailable. Check suggestions below.`);
         }
+      } else {
+        setError(`Could not get details for "${searchQuery}".`);
       }
+      setSuggestedDomains(data.suggestions || []);
     } catch (err) {
       console.error("Error searching domain:", err);
       if (err.message.includes("Unauthorized") || err.message.includes("401")) {
@@ -141,83 +137,69 @@ const SearchPage = () => {
     });
   };
 
-  // This component renders the initial state (TLD list)
-  const renderInitialView = () => {
-    if (loadingTlds) {
-      return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
-    }
-    if (trendingTlds.length > 0) {
-      const tldCards = [];
-      const loopCount = Math.min(trendingTlds.length, 10);
-      for (let i = 0; i < loopCount; i++) {
-        const tldItem = trendingTlds[i];
-        tldCards.push(<TldCard key={tldItem} tld={tldItem} />);
-      }
-      return (
-        // Use a ScrollView here, as it's safe (no nested lists)
-        <ScrollView contentContainerStyle={styles.resultsScrollContent}>
+  const renderResults = () => {
+    if (!loadingSearch && !searchedDomainResult && suggestedDomains.length === 0 && !error && !searchQuery.trim()) {
+      if (loadingTrending) return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
+      if (trendingDomains.length > 0) {
+        return (
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Top 10 Popular TLDs</Text>
-            {tldCards}
+            <Text style={styles.sectionTitle}>Trending Domains</Text>
+            <FlatList
+              data={trendingDomains}
+              keyExtractor={(item, index) => item.domain || `trending-${index}`}
+              renderItem={({ item }) => (
+                <DomainCard
+                  item={item}
+                  onPress={handleDomainSelect}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={isDomainFavoriteGlobally(item.domain)}
+                />
+              )}
+            />
           </View>
-        </ScrollView>
-      );
-    }
-    return <Text style={styles.infoText}>Start by searching for a domain or selecting a TLD.</Text>;
-  }
-
-  // This component renders everything that appears *above* the suggestions list.
-  const renderListHeader = () => (
-    <>
-      {searchedDomainResult && (
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Direct Match</Text>
-          <DomainCard
-            item={searchedDomainResult}
-            onPress={handleDomainSelect}
-            onToggleFavorite={toggleFavorite}
-            isFavorite={isDomainFavoriteGlobally(searchedDomainResult.domain)}
-          />
-        </View>
-      )}
-      {suggestedDomains.length > 0 && (
-        <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>Suggestions</Text>
-      )}
-    </>
-  );
-
-  const renderContent = () => {
-    const hasSearchResults = searchedDomainResult || suggestedDomains.length > 0;
-
-    if (loadingSearch) {
-      return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
+        );
+      }
+      return <Text style={styles.infoText}>Start by searching for a domain.</Text>;
     }
 
-    if (!hasSearchResults) {
-      // If there are no search results, show the initial view or "no results" text
-      return renderInitialView();
-    }
+    if (loadingSearch) return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
 
-    // If we have results, use a FlatList as the main scroll container
     return (
-      <FlatList
-        data={suggestedDomains}
-        keyExtractor={(item) => item.domain}
-        renderItem={({ item }) => (
-          <DomainCard
-            item={item}
-            onPress={handleDomainSelect}
-            onToggleFavorite={toggleFavorite}
-            isFavorite={isDomainFavoriteGlobally(item.domain)}
-          />
+      <>
+        {searchedDomainResult && (
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Direct Match</Text>
+            <DomainCard
+              item={searchedDomainResult}
+              onPress={handleDomainSelect}
+              onToggleFavorite={toggleFavorite}
+              isFavorite={isDomainFavoriteGlobally(searchedDomainResult.domain)}
+            />
+          </View>
         )}
-        ListHeaderComponent={renderListHeader}
-        contentContainerStyle={styles.resultsScrollContent}
-        showsVerticalScrollIndicator={false}
-      />
+        {suggestedDomains.length > 0 && (
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Suggestions</Text>
+            <FlatList
+              data={suggestedDomains}
+              keyExtractor={(item, index) => item.domain || `suggestion-${index}`}
+              renderItem={({ item }) => (
+                <DomainCard
+                  item={item}
+                  onPress={handleDomainSelect}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={isDomainFavoriteGlobally(item.domain)}
+                />
+              )}
+            />
+          </View>
+        )}
+        {!searchedDomainResult && suggestedDomains.length === 0 && error && !error.includes("unavailable") && (
+          <Text style={styles.infoText}>No suggestions found for this search.</Text>
+        )}
+      </>
     );
   };
-
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -234,7 +216,7 @@ const SearchPage = () => {
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearchDomain} disabled={loadingSearch || loadingTlds}>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearchDomain} disabled={loadingSearch || loadingTrending}>
             {loadingSearch ? <ActivityIndicator color={COLORS.textOnPrimaryGreen} size="small" /> : <Ionicons name="search" size={ICON_SIZES.lg} color={COLORS.textOnPrimaryGreen} />}
           </TouchableOpacity>
         </View>
@@ -246,10 +228,14 @@ const SearchPage = () => {
           </View>
         )}
 
-        {/* The main content area now uses conditional rendering to avoid nesting scroll views */}
-        <View style={styles.resultsContainer}>
-          {renderContent()}
-        </View>
+        <ScrollView
+          style={styles.resultsScroll}
+          contentContainerStyle={styles.resultsScrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {renderResults()}
+        </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -259,15 +245,12 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
   gradientBg: { flex: 1 },
   searchBarContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, backgroundColor: COLORS.mediumBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  searchInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: Platform.OS === 'ios' ? SPACING.sm + 2 : SPACING.sm, fontSize: FONT_SIZES.md, backgroundColor: COLORS.darkBg, color: COLORS.textPrimary, marginRight: SPACING.sm, height: 48 },
+  searchInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: Platform.OS === 'ios' ? SPACING.sm + 2 : SPACING.sm, fontSize: FONT_SIZES.md, backgroundColor: COLORS.darkBg, color: COLORS.textPrimary, marginRight: SPACING.sm, height: 48 /* Consistent height */ },
   searchButton: { backgroundColor: COLORS.primaryGreen, padding: SPACING.sm + 2, borderRadius: BORDER_RADIUS.md, justifyContent: 'center', alignItems: 'center', height: 48, width: 48 },
   errorDisplayContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.errorBackground, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, marginHorizontal: SPACING.md, marginTop: SPACING.md, borderRadius: BORDER_RADIUS.sm, borderLeftWidth: 3, borderLeftColor: COLORS.errorBorder },
   errorTextMsg: { color: COLORS.error, fontSize: FONT_SIZES.sm, flex: 1 },
-  // New container style to manage the results area
-  resultsContainer: {
-    flex: 1,
-  },
-  resultsScrollContent: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl, paddingTop: SPACING.sm },
+  resultsScroll: { flex: 1 },
+  resultsScrollContent: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
   sectionContainer: { marginTop: SPACING.lg },
   sectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: "bold", color: COLORS.primaryGreen, marginBottom: SPACING.sm },
   domainCardBase: { marginBottom: SPACING.sm, padding: SPACING.md, backgroundColor: COLORS.mediumBg },
@@ -280,6 +263,9 @@ const styles = StyleSheet.create({
   availabilityText: { fontSize: FONT_SIZES.xs, fontWeight: '600', marginTop: SPACING.sm, textAlign: 'right' },
   available: { color: COLORS.primaryGreenDark },
   unavailable: { color: COLORS.error },
+  tldContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.xs },
+  tldChip: { backgroundColor: COLORS.mediumBg, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: COLORS.primaryGreen },
+  tldText: { color: COLORS.primaryGreen, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   infoText: { textAlign: 'center', color: COLORS.textSecondary, fontSize: FONT_SIZES.md, marginTop: SPACING.xl, paddingHorizontal: SPACING.lg },
 });
 

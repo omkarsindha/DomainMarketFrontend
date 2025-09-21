@@ -36,3 +36,35 @@ export const updateUserDetails = async (userDetails) => {
     }
     return await response.json();
 };
+
+export const fetchUser = async () => {
+    const token = await getToken();
+    if (!token) throw new Error("Authentication required. Please login.");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.user}`, {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: "Failed to fetch user details" }));
+        throw new Error(errorData.detail || "Failed to fetch user details");
+    }
+    return await response.json();
+};
+
+export const fetchMyTransactions = async () => {
+    const token = await getToken();
+    if (!token) throw new Error("Authentication required. Please login.");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.myTransactions}`, {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: "Failed to fetch transactions" }));
+        throw new Error(errorData.detail || "Failed to fetch transactions");
+    }
+    return await response.json();
+};

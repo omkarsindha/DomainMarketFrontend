@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert, Platform, ActivityIndicator } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../_layout';
 
+import { fetchUser } from '../../../src/services/userService';
 import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, ICON_SIZES } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
@@ -10,7 +11,33 @@ import { Ionicons } from '@expo/vector-icons';
 
 const ProfilePage = () => {
   const router = useRouter();
-  const { logout: contextLogout, userToken } = useAuth();
+  const { logout: contextLogout } = useAuth();
+
+  const [user, setUser] = useState({ username: '', email: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+
+  const loadUserDetails = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchUser();
+      setUser(data);
+    } catch (err) {
+      console.error("Failed to fetch user details:", err);
+      setError(err.message || "Could not load profile.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUserDetails();
+    }, [loadUserDetails])
+  );
+
 
   const handleLogout = async () => {
     Alert.alert(
@@ -34,17 +61,27 @@ const ProfilePage = () => {
     );
   };
 
-  const user = {
-    username: "CurrentUser",
-    email: "user@example.com"
-  };
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={globalStyles.centeredContainer}>
+          <ActivityIndicator size="large" color={COLORS.primaryGreen} />
+        </View>
+      );
+    }
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>My Profile</Text>
-      </View>
+    if (error) {
+      return (
+        <View style={globalStyles.centeredContainer}>
+          <Text style={globalStyles.errorText}>{error}</Text>
+          <Pressable style={globalStyles.button} onPress={loadUserDetails}>
+            <Text style={globalStyles.buttonText}>Try Again</Text>
+          </Pressable>
+        </View>
+      );
+    }
 
+    return (
       <View style={styles.contentContainer}>
         <View style={globalStyles.card}>
           <View style={styles.profileInfoRow}>
@@ -54,14 +91,19 @@ const ProfilePage = () => {
               <Text style={styles.emailText}>{user.email}</Text>
             </View>
           </View>
+          <View style={styles.divider} />
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/transactions')}>
+            <Ionicons name="receipt-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>View Transactions</Text>
+            <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
+          </Pressable>
         </View>
-
 
         <Pressable
           style={({ pressed }) => [
             globalStyles.button,
             styles.logoutButton,
-            pressed && { backgroundColor: COLORS.error } // Darken on press
+            pressed && { backgroundColor: COLORS.error }
           ]}
           onPress={handleLogout}
         >
@@ -69,6 +111,15 @@ const ProfilePage = () => {
           <Text style={globalStyles.buttonText}>Logout</Text>
         </Pressable>
       </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>My Profile</Text>
+      </View>
+      {renderContent()}
     </SafeAreaView>
   );
 };
@@ -79,12 +130,14 @@ const styles = StyleSheet.create({
   headerContainer: { paddingHorizontal: SPACING.md, paddingTop: Platform.OS === 'android' ? SPACING.lg : SPACING.md, paddingBottom: SPACING.md, backgroundColor: COLORS.mediumBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   headerTitle: { fontSize: FONT_SIZES.header, fontWeight: 'bold', color: COLORS.primaryGreen },
   contentContainer: { flex: 1, padding: SPACING.md },
-  profileInfoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
-  profileTextContainer: { marginLeft: SPACING.md },
+  profileInfoRow: { flexDirection: 'row', alignItems: 'center' },
+  profileTextContainer: { marginLeft: SPACING.md, flex: 1 },
   usernameText: { fontSize: FONT_SIZES.xl, fontWeight: 'bold', color: COLORS.textPrimary },
   emailText: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  menuItemText: { flex: 1, marginLeft: SPACING.md, fontSize: FONT_SIZES.md, color: COLORS.textPrimary },
+  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.md },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.sm },
+  menuIcon: { marginRight: SPACING.md },
+  menuItemText: { flex: 1, fontSize: FONT_SIZES.md, color: COLORS.textPrimary },
   logoutButton: { marginTop: SPACING.xl, backgroundColor: COLORS.error, borderColor: COLORS.error, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
 });
 

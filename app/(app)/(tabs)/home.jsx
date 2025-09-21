@@ -1,31 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, SafeAreaView, RefreshControl, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { fetchTrendingDomains } from '../../../src/services/domainService';
+import { useFocusEffect } from 'expo-router';
+import { fetchMyDomains } from '../../../src/services/domainService';
 import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS, ICON_SIZES, SCREEN_HEIGHT } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
 
-
 const HomePage = () => {
-  const router = useRouter();
-
-  const [trendingDomains, setTrendingDomains] = useState([]);
+  const [myDomains, setMyDomains] = useState([]);
+  const [portfolioValue, setPortfolioValue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const loadTrendingDomains = useCallback(async (isRefresh = false) => {
+  const loadMyDomains = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
     setErrorMessage('');
     try {
-      const data = await fetchTrendingDomains();
-      setTrendingDomains(data || []);
+      const data = await fetchMyDomains();
+      setMyDomains(data || []);
     } catch (error) {
-      console.error("Fetch Trending Domains Error:", error);
-      setErrorMessage(error.message || 'Could not load trending domains.');
-      setTrendingDomains([]);
+      console.error("Fetch My Domains Error:", error);
+      setErrorMessage(error.message || 'Could not load your domains.');
+      setMyDomains([]);
     } finally {
       if (!isRefresh) setLoading(false);
       if (isRefresh) setRefreshing(false);
@@ -34,56 +32,55 @@ const HomePage = () => {
 
   useFocusEffect(
     useCallback(() => {
-      loadTrendingDomains();
-      return () => {
-        // Optional: Cleanup if needed when screen goes out of focus
-      };
-    }, [loadTrendingDomains]) // loadTrendingDomains is now a dependency
+      loadMyDomains();
+    }, [loadMyDomains])
   );
+
+  useEffect(() => {
+    if (myDomains.length > 0) {
+      const totalValue = myDomains.reduce((sum, domain) => {
+        return sum + (Number(domain.price) || 0);
+      }, 0);
+      setPortfolioValue(totalValue);
+    } else {
+      setPortfolioValue(0);
+    }
+  }, [myDomains]);
+
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadTrendingDomains(true);
-  };
-
-  const handleDomainPress = (domainItem) => {
-    router.push({
-      pathname: '/(app)/domainBuy',
-      params: { domain: JSON.stringify(domainItem) }
-    });
+    loadMyDomains(true);
   };
 
   const renderDomainItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.domainItemContainer}
-      onPress={() => handleDomainPress(item)}
-      activeOpacity={0.7}
-    >
+    <View style={styles.domainItemContainer}>
       <View style={styles.domainInfo}>
-        <Text style={styles.domainNameText} numberOfLines={1} ellipsizeMode="tail">{item.domain}</Text>
-        <Text style={styles.domainAvailabilityText}>
-          {/* Adjust based on actual data, e.g., item.is_available ? 'Available' : 'Unavailable' */}
-          {item.is_available !== undefined ? (item.is_available ? 'Available' : 'Taken') : 'Check Availability'}
+        <Text style={styles.domainNameText} numberOfLines={1}>{item.domain_name}</Text>
+        <Text style={styles.domainDateText}>
+          Expires on: {new Date(item.expiry_date).toLocaleDateString()}
         </Text>
       </View>
       <View style={styles.priceInfo}>
-        {/* Handle potentially nested price object */}
         <Text style={styles.domainPriceText}>
-          ${(item.price?.price ?? item.price ?? 0).toFixed(2)}
-        </Text>
-        <Text style={styles.domainDurationText}>
-          Min. {item.price?.min_duration ?? item.min_duration ?? '1'} {item.price?.duration_type ?? item.duration_type ?? 'Year'}
+          ${(Number(item.price) || 0).toFixed(2)}
         </Text>
       </View>
-      <Ionicons name="chevron-forward-outline" size={ICON_SIZES.md} color={COLORS.primaryGreen} />
-    </TouchableOpacity>
+    </View>
   );
 
-  if (loading && trendingDomains.length === 0) { // Show loader only if no data yet
+  const renderPortfolioHeader = () => (
+    <View style={styles.portfolioCard}>
+      <Text style={styles.portfolioLabel}>Portfolio Value</Text>
+      <Text style={styles.portfolioValue}>${portfolioValue.toFixed(2)}</Text>
+    </View>
+  );
+
+  if (loading) {
     return (
       <SafeAreaView style={[globalStyles.centeredContainer, { backgroundColor: COLORS.darkBg }]}>
         <ActivityIndicator size="large" color={COLORS.primaryGreen} />
-        <Text style={styles.loadingText}>Loading Domains...</Text>
+        <Text style={styles.loadingText}>Loading Your Portfolio...</Text>
       </SafeAreaView>
     );
   }
@@ -91,22 +88,23 @@ const HomePage = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Trending Domains</Text>
+        <Text style={styles.headerTitle}>My Portfolio</Text>
       </View>
 
-      {errorMessage && trendingDomains.length === 0 ? ( // Show error only if no data
+      {errorMessage && myDomains.length === 0 ? (
         <View style={[globalStyles.centeredContainer, styles.errorStateContainer]}>
           <Ionicons name="cloud-offline-outline" size={ICON_SIZES.xl * 2} color={COLORS.textSecondary} />
           <Text style={[globalStyles.errorText, { marginTop: SPACING.md }]}>{errorMessage}</Text>
-          <TouchableOpacity style={[globalStyles.button, styles.retryButton]} onPress={() => loadTrendingDomains()}>
+          <TouchableOpacity style={[globalStyles.button, styles.retryButton]} onPress={() => loadMyDomains()}>
             <Text style={globalStyles.buttonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <FlatList
-          data={trendingDomains}
+          data={myDomains}
           renderItem={renderDomainItem}
-          keyExtractor={(item, index) => item.domain_id || item.domain || `domain-${index}`}
+          keyExtractor={(item) => item.id.toString()}
+          ListHeaderComponent={renderPortfolioHeader}
           contentContainerStyle={styles.listContentContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -120,8 +118,8 @@ const HomePage = () => {
           ListEmptyComponent={!loading && !errorMessage ? (
             <View style={styles.emptyListContainer}>
               <Ionicons name="file-tray-outline" size={ICON_SIZES.xl * 2} color={COLORS.textSecondary} />
-              <Text style={styles.emptyListText}>No trending domains found.</Text>
-              <Text style={styles.emptyListSubText}>Check back later or try refreshing.</Text>
+              <Text style={styles.emptyListText}>No Domains Yet</Text>
+              <Text style={styles.emptyListSubText}>Domains you register will appear here.</Text>
             </View>
           ) : null}
         />
@@ -137,15 +135,17 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: SPACING.sm, fontSize: FONT_SIZES.md, color: COLORS.textPrimary },
   errorStateContainer: { padding: SPACING.lg },
   listContentContainer: { paddingHorizontal: SPACING.md, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl },
-  domainItemContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: SPACING.md, paddingHorizontal: SPACING.md, marginBottom: SPACING.sm, backgroundColor: COLORS.mediumBg, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, minHeight: 70 },
+  portfolioCard: { backgroundColor: COLORS.mediumBg, borderRadius: BORDER_RADIUS.md, padding: SPACING.lg, alignItems: 'center', marginBottom: SPACING.lg, borderWidth: 1, borderColor: COLORS.primaryGreenDark },
+  portfolioLabel: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary, marginBottom: SPACING.sm },
+  portfolioValue: { fontSize: FONT_SIZES.title, fontWeight: 'bold', color: COLORS.primaryGreen },
+  domainItemContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.md, marginBottom: SPACING.sm, backgroundColor: COLORS.mediumBg, borderRadius: BORDER_RADIUS.md },
   domainInfo: { flex: 1, marginRight: SPACING.sm },
   domainNameText: { fontSize: FONT_SIZES.lg, fontWeight: '600', color: COLORS.textPrimary, marginBottom: SPACING.xs },
-  domainAvailabilityText: { fontSize: FONT_SIZES.xs, color: COLORS.primaryGreen },
-  priceInfo: { alignItems: 'flex-end', marginRight: SPACING.sm },
+  domainDateText: { fontSize: FONT_SIZES.xs, color: COLORS.textSecondary },
+  priceInfo: { alignItems: 'flex-end' },
   domainPriceText: { fontSize: FONT_SIZES.md, fontWeight: 'bold', color: COLORS.primaryGreen },
-  domainDurationText: { fontSize: FONT_SIZES.xs, color: COLORS.textSecondary },
   retryButton: { marginTop: SPACING.lg, paddingHorizontal: SPACING.xl },
-  emptyListContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl, marginTop: SCREEN_HEIGHT * 0.15 },
+  emptyListContainer: { justifyContent: 'center', alignItems: 'center', padding: SPACING.xl, marginTop: SCREEN_HEIGHT * 0.1 },
   emptyListText: { fontSize: FONT_SIZES.lg, color: COLORS.textPrimary, marginTop: SPACING.md, textAlign: 'center' },
   emptyListSubText: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary, marginTop: SPACING.sm, textAlign: 'center' },
 });
