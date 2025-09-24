@@ -57,7 +57,21 @@ export default function AppLayout() {
                         </TouchableOpacity>
                     ),
                 }}
-            />
+            /><Stack.Screen
+                name="auction"
+                    options={{
+                        title: 'Auctions',
+                        headerShown: true,
+                        headerStyle: { backgroundColor: COLORS.mediumBg },
+                        headerTintColor: COLORS.primaryGreen,
+                        headerTitleStyle: { fontWeight: 'bold' },
+                        headerLeft: () => (
+                                <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: SPACING.md }}>
+                                     <Ionicons name="arrow-back" size={ICON_SIZES.lg} color={COLORS.primaryGreen} />
+                                </TouchableOpacity>
+                    ),
+                    }}
+                    />
         </Stack>
 
     );

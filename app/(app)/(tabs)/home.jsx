@@ -6,8 +6,10 @@ import { fetchMyDomains } from '../../../src/services/domainService';
 import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS, ICON_SIZES, SCREEN_HEIGHT } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
+import { useRouter } from 'expo-router';
 
 const HomePage = () => {
+  const router = useRouter();
   const [myDomains, setMyDomains] = useState([]);
   const [portfolioValue, setPortfolioValue] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -87,9 +89,19 @@ const HomePage = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerContainer}>
+      {/* <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>My Portfolio</Text>
-      </View>
+      </View> */}
+      <View style={styles.headerContainer}>
+    <Text style={styles.headerTitle}>My Portfolio</Text>
+    <TouchableOpacity 
+        style={styles.auctionHeaderButton}
+        onPress={() => router.push('/(app)/auction')}
+    >
+        <Ionicons name="hammer-outline" size={ICON_SIZES.md} color={COLORS.primaryGreen} />
+        <Text style={styles.auctionHeaderText}>Auctions</Text>
+    </TouchableOpacity>
+</View>
 
       {errorMessage && myDomains.length === 0 ? (
         <View style={[globalStyles.centeredContainer, styles.errorStateContainer]}>
@@ -130,7 +142,17 @@ const HomePage = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
-  headerContainer: { paddingHorizontal: SPACING.md, paddingTop: Platform.OS === 'android' ? SPACING.lg : SPACING.md, paddingBottom: SPACING.md, backgroundColor: COLORS.mediumBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: SPACING.md, 
+    paddingTop: Platform.OS === 'android' ? SPACING.lg : SPACING.md, 
+    paddingBottom: SPACING.md, 
+    backgroundColor: COLORS.mediumBg, 
+    borderBottomWidth: 1, 
+    borderBottomColor: COLORS.border 
+},
   headerTitle: { fontSize: FONT_SIZES.header, fontWeight: 'bold', color: COLORS.primaryGreen },
   loadingText: { marginTop: SPACING.sm, fontSize: FONT_SIZES.md, color: COLORS.textPrimary },
   errorStateContainer: { padding: SPACING.lg },
@@ -148,6 +170,20 @@ const styles = StyleSheet.create({
   emptyListContainer: { justifyContent: 'center', alignItems: 'center', padding: SPACING.xl, marginTop: SCREEN_HEIGHT * 0.1 },
   emptyListText: { fontSize: FONT_SIZES.lg, color: COLORS.textPrimary, marginTop: SPACING.md, textAlign: 'center' },
   emptyListSubText: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary, marginTop: SPACING.sm, textAlign: 'center' },
+  auctionHeaderButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: COLORS.primaryGreen, 
+    paddingHorizontal: SPACING.sm, 
+    paddingVertical: SPACING.xs, 
+    borderRadius: BORDER_RADIUS.sm 
+},
+auctionHeaderText: { 
+    color: COLORS.textOnPrimaryGreen, 
+    fontSize: FONT_SIZES.sm, 
+    fontWeight: '600', 
+    marginLeft: SPACING.xs 
+}
 });
 
 export default HomePage;

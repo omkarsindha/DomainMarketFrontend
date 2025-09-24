@@ -1,23 +1,22 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert, Platform, ActivityIndicator } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../_layout';
 
-import { fetchUser } from '../../../src/services/userService';
+import { fetchUser } from '../../../src/services/userService'; // ✅ Restore real fetch
 import { COLORS } from '../../../src/constants/colors';
-import { FONT_SIZES, SPACING, ICON_SIZES } from '../../../src/constants/dimensions';
+import { FONT_SIZES, SPACING } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
 
 const ProfilePage = () => {
-  const router = useRouter();
   const { logout: contextLogout } = useAuth();
 
   const [user, setUser] = useState({ username: '', email: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-
+  // ✅ Fetch user from backend
   const loadUserDetails = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -38,7 +37,6 @@ const ProfilePage = () => {
     }, [loadUserDetails])
   );
 
-
   const handleLogout = async () => {
     Alert.alert(
       "Confirm Logout",
@@ -50,7 +48,7 @@ const ProfilePage = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await contextLogout();
+              await contextLogout(); // ✅ Real logout clears token/session
             } catch (error) {
               console.error("Logout error:", error);
               Alert.alert("Error", "Could not log out. Please try again.");
@@ -61,42 +59,48 @@ const ProfilePage = () => {
     );
   };
 
-  const renderContent = () => {
-    if (loading) {
-      return (
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
         <View style={globalStyles.centeredContainer}>
           <ActivityIndicator size="large" color={COLORS.primaryGreen} />
         </View>
-      );
-    }
+      </SafeAreaView>
+    );
+  }
 
-    if (error) {
-      return (
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
         <View style={globalStyles.centeredContainer}>
           <Text style={globalStyles.errorText}>{error}</Text>
           <Pressable style={globalStyles.button} onPress={loadUserDetails}>
             <Text style={globalStyles.buttonText}>Try Again</Text>
           </Pressable>
         </View>
-      );
-    }
+      </SafeAreaView>
+    );
+  }
 
-    return (
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>My Profile</Text>
+      </View>
+
       <View style={styles.contentContainer}>
         <View style={globalStyles.card}>
           <View style={styles.profileInfoRow}>
-            <Ionicons name="person-circle-outline" size={SPACING.xxl + SPACING.lg} color={COLORS.primaryGreen} />
+            <Ionicons
+              name="person-circle-outline"
+              size={SPACING.xxl + SPACING.lg}
+              color={COLORS.primaryGreen}
+            />
             <View style={styles.profileTextContainer}>
               <Text style={styles.usernameText}>{user.username}</Text>
               <Text style={styles.emailText}>{user.email}</Text>
             </View>
           </View>
-          <View style={styles.divider} />
-          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/transactions')}>
-            <Ionicons name="receipt-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
-            <Text style={styles.menuItemText}>View Transactions</Text>
-            <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
-          </Pressable>
         </View>
 
         <Pressable
@@ -107,38 +111,43 @@ const ProfilePage = () => {
           ]}
           onPress={handleLogout}
         >
-          <Ionicons name="log-out-outline" size={FONT_SIZES.lg} color={COLORS.textOnPrimaryGreen} style={{ marginRight: SPACING.sm }} />
+          <Ionicons
+            name="log-out-outline"
+            size={FONT_SIZES.lg}
+            color={COLORS.textOnPrimaryGreen}
+            style={{ marginRight: SPACING.sm }}
+          />
           <Text style={globalStyles.buttonText}>Logout</Text>
         </Pressable>
       </View>
-    );
-  };
-
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>My Profile</Text>
-      </View>
-      {renderContent()}
     </SafeAreaView>
   );
 };
 
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
-  headerContainer: { paddingHorizontal: SPACING.md, paddingTop: Platform.OS === 'android' ? SPACING.lg : SPACING.md, paddingBottom: SPACING.md, backgroundColor: COLORS.mediumBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerContainer: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: Platform.OS === 'android' ? SPACING.lg : SPACING.md,
+    paddingBottom: SPACING.md,
+    backgroundColor: COLORS.mediumBg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border
+  },
   headerTitle: { fontSize: FONT_SIZES.header, fontWeight: 'bold', color: COLORS.primaryGreen },
   contentContainer: { flex: 1, padding: SPACING.md },
   profileInfoRow: { flexDirection: 'row', alignItems: 'center' },
   profileTextContainer: { marginLeft: SPACING.md, flex: 1 },
   usernameText: { fontSize: FONT_SIZES.xl, fontWeight: 'bold', color: COLORS.textPrimary },
   emailText: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary },
-  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.md },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.sm },
-  menuIcon: { marginRight: SPACING.md },
-  menuItemText: { flex: 1, fontSize: FONT_SIZES.md, color: COLORS.textPrimary },
-  logoutButton: { marginTop: SPACING.xl, backgroundColor: COLORS.error, borderColor: COLORS.error, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  logoutButton: {
+    marginTop: SPACING.xl,
+    backgroundColor: COLORS.error,
+    borderColor: COLORS.error,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
 });
 
 export default ProfilePage;

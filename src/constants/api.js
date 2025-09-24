@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://10.0.2.2:8000';
+export const API_BASE_URL = 'http://localhost:8000';
 
 export const API_ENDPOINTS = {
 
@@ -13,4 +13,8 @@ export const API_ENDPOINTS = {
     registerDomain: (domain, years) => `/domains/register?domain=${encodeURIComponent(domain)}&years=${years}`,
     checkDomain: '/domains/check',
     trendingTlds: '/domains/trending-tlds',
+    auctions: '/auctions',
+    createAuction: '/auctions/create',
+    bidOnAuction: '/auctions/bid',
+    myAuctions: '/auctions/my-auctions',
 };
