@@ -5,12 +5,6 @@ import { Platform, View, Text } from 'react-native';
 import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, ICON_SIZES, SPACING } from '../../../src/constants/dimensions';
 
-const PlaceholderFavoritesScreen = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.darkBg }}>
-        <Text style={{ color: COLORS.textPrimary }}>Favorites Screen Placeholder</Text>
-    </View>
-);
-
 export default function TabLayout() {
     return (
         <Tabs
@@ -30,7 +24,7 @@ export default function TabLayout() {
 
                     if (route.name === 'home') iconName = focused ? 'home' : 'home-outline';
                     else if (route.name === 'search') iconName = focused ? 'search' : 'search-outline';
-                    else if (route.name === 'favorites') iconName = focused ? 'heart' : 'heart-outline';
+                    else if (route.name === 'marketplace') iconName = focused ? 'storefront' : 'storefront-outline';
                     else if (route.name === 'profile') iconName = focused ? 'person-circle' : 'person-circle-outline';
                     else iconName = 'ellipse-outline';
 
@@ -47,10 +41,7 @@ export default function TabLayout() {
         >
             <Tabs.Screen name="home" options={{ title: 'Home' }} />
             <Tabs.Screen name="search" options={{ title: 'Search' }} />
-            <Tabs.Screen
-                name="favorites"
-                options={{ title: 'Favorites' }}
-            />
+            <Tabs.Screen name="marketplace" options={{ title: 'Marketplace' }} />
             <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
         </Tabs>
     );

@@ -97,6 +97,12 @@ const ProfilePage = () => {
             <Text style={styles.menuItemText}>View Transactions</Text>
             <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
           </Pressable>
+
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/addPaymentMethod')}>
+            <Ionicons name="card-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>Manage Payment Method</Text>
+            <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
+          </Pressable>
         </View>
 
         <Pressable
@@ -139,6 +145,7 @@ const styles = StyleSheet.create({
   menuIcon: { marginRight: SPACING.md },
   menuItemText: { flex: 1, fontSize: FONT_SIZES.md, color: COLORS.textPrimary },
   logoutButton: { marginTop: SPACING.xl, backgroundColor: COLORS.error, borderColor: COLORS.error, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.sm, marginHorizontal: SPACING.md },
 });
 
 export default ProfilePage;

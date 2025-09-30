@@ -5,6 +5,8 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { FavoritesProvider } from '../src/context/FavoritesContext';
 import { getToken, removeToken as serviceRemoveToken } from '../src/services/authService';
 import { COLORS } from '../src/constants/colors';
+import { StripeProvider } from '@stripe/stripe-react-native';
+
 
 const AuthContext = createContext(null);
 
@@ -47,12 +49,15 @@ function AuthProvider({ children }) {
 }
 
 export default function RootLayout() {
+    const stripePublishableKey = "pk_test_51SCqaKAYB1NbYIdnRx4d3ykwfpaiUAkHMHrvGFQf8zFWNWuYVVCAcp4NRoKTw6RR2DYQ8hhbmxE5RnPRlnkxjU3u00YAPlX5SG";
     return (
-        <AuthProvider>
-            <FavoritesProvider>
-                <Layout />
-            </FavoritesProvider>
-        </AuthProvider>
+        <StripeProvider publishableKey={stripePublishableKey}>
+            <AuthProvider>
+                <FavoritesProvider>
+                    <Layout />
+                </FavoritesProvider>
+            </AuthProvider>
+        </StripeProvider>
     );
 }
 

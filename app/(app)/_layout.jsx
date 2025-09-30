@@ -8,57 +8,63 @@ import { ICON_SIZES, SPACING } from '../../src/constants/dimensions';
 
 export default function AppLayout() {
     const router = useRouter();
+    const defaultHeaderOptions = {
+        headerShown: true,
+        headerStyle: { backgroundColor: COLORS.mediumBg },
+        headerTintColor: COLORS.primaryGreen,
+        headerTitleStyle: { fontWeight: 'bold' },
+        headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: SPACING.md }}>
+                <Ionicons name="arrow-back" size={ICON_SIZES.lg} color={COLORS.primaryGreen} />
+            </TouchableOpacity>
+        ),
+    };
+
     return (
         <Stack>
-
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
             <Stack.Screen
                 name="domainBuy"
                 options={{
+                    ...defaultHeaderOptions,
                     title: 'Domain Registration',
-                    headerShown: true,
-                    headerStyle: { backgroundColor: COLORS.mediumBg },
-                    headerTintColor: COLORS.primaryGreen,
-                    headerTitleStyle: { fontWeight: 'bold' },
-                    headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: SPACING.md }}>
-                            <Ionicons name="arrow-back" size={ICON_SIZES.lg} color={COLORS.primaryGreen} />
-                        </TouchableOpacity>
-                    ),
                 }}
             />
             <Stack.Screen
                 name="checkout"
                 options={{
+                    ...defaultHeaderOptions,
                     title: 'Checkout',
-                    headerShown: true,
-                    headerStyle: { backgroundColor: COLORS.mediumBg },
-                    headerTintColor: COLORS.primaryGreen,
-                    headerTitleStyle: { fontWeight: 'bold' },
-                    headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: SPACING.md }}>
-                            <Ionicons name="arrow-back" size={ICON_SIZES.lg} color={COLORS.primaryGreen} />
-                        </TouchableOpacity>
-                    ),
                 }}
             />
             <Stack.Screen
                 name="transactions"
                 options={{
+                    ...defaultHeaderOptions,
                     title: 'My Transactions',
-                    headerShown: true,
-                    headerStyle: { backgroundColor: COLORS.mediumBg },
-                    headerTintColor: COLORS.primaryGreen,
-                    headerTitleStyle: { fontWeight: 'bold' },
-                    headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: SPACING.md }}>
-                            <Ionicons name="arrow-back" size={ICON_SIZES.lg} color={COLORS.primaryGreen} />
-                        </TouchableOpacity>
-                    ),
                 }}
             />
-        </Stack>
-
+            <Stack.Screen
+                name="createAuction"
+                options={{
+                    ...defaultHeaderOptions,
+                    title: 'Create Auction',
+                }}
+            />
+            <Stack.Screen
+                name="auctionDetail"
+                options={{
+                    ...defaultHeaderOptions,
+                    title: 'Auction Details',
+                }}
+            />
+            <Stack.Screen
+                name="addPaymentMethod"
+                options={{
+                    ...defaultHeaderOptions,
+                    title: 'Add Payment Method',
+                }}
+            />
+        </Stack >
     );
 }

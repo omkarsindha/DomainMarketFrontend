@@ -1,8 +1,7 @@
-// src/context/FavoritesContext.js
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const FAVORITES_STORAGE_KEY = '@user_domain_favorites'; // Use a good key
+const FAVORITES_STORAGE_KEY = '@user_domain_favorites';
 const FavoritesContext = createContext(null);
 
 export function useFavorites() {
@@ -14,10 +13,9 @@ export function useFavorites() {
 }
 
 export function FavoritesProvider({ children }) {
-    const [favorites, setFavorites] = useState([]); // Array of domain items
+    const [favorites, setFavorites] = useState([]);
     const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
 
-    // Load favorites from AsyncStorage on initial mount
     useEffect(() => {
         const loadFavoritesFromStorage = async () => {
             setIsLoadingFavorites(true);
@@ -26,11 +24,11 @@ export function FavoritesProvider({ children }) {
                 if (storedFavoritesJson !== null) {
                     setFavorites(JSON.parse(storedFavoritesJson));
                 } else {
-                    setFavorites([]); // Initialize with empty array if nothing stored
+                    setFavorites([]);
                 }
             } catch (e) {
                 console.error("FavoritesContext: Failed to load favorites from storage", e);
-                setFavorites([]); // Fallback to empty on error
+                setFavorites([]);
             } finally {
                 setIsLoadingFavorites(false);
             }
@@ -39,10 +37,8 @@ export function FavoritesProvider({ children }) {
         loadFavoritesFromStorage();
     }, []);
 
-    // Persist favorites to AsyncStorage whenever the favorites state changes
     useEffect(() => {
         const saveFavoritesToStorage = async () => {
-            // Don't save during initial load if favorites haven't been set yet from storage
             if (!isLoadingFavorites) {
                 try {
                     await AsyncStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
@@ -56,7 +52,6 @@ export function FavoritesProvider({ children }) {
 
 
     const toggleFavorite = useCallback((domainItem) => {
-        // Ensure domainItem and domainItem.domain exist
         if (!domainItem || typeof domainItem.domain !== 'string') {
             console.warn("FavoritesContext: Invalid domainItem passed to toggleFavorite", domainItem);
             return;
@@ -65,18 +60,15 @@ export function FavoritesProvider({ children }) {
         setFavorites(prevFavorites => {
             const isCurrentlyFavorite = prevFavorites.some(fav => fav.domain === domainItem.domain);
             if (isCurrentlyFavorite) {
-                // Remove from favorites
                 return prevFavorites.filter(fav => fav.domain !== domainItem.domain);
             } else {
-                // Add to favorites
-                // Ensure we don't add duplicates if somehow called rapidly (though UI should prevent this)
                 if (!prevFavorites.some(fav => fav.domain === domainItem.domain)) {
                     return [...prevFavorites, domainItem];
                 }
                 return prevFavorites;
             }
         });
-    }, []); // No dependencies needed for setFavorites with updater function
+    }, []);
 
     const isFavorite = useCallback((domainName) => {
         if (typeof domainName !== 'string') return false;

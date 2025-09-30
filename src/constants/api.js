@@ -13,4 +13,14 @@ export const API_ENDPOINTS = {
     registerDomain: (domain, years) => `/domains/register?domain=${encodeURIComponent(domain)}&years=${years}`,
     checkDomain: '/domains/check',
     trendingTlds: '/domains/trending-tlds',
+
+    setupIntent: '/users/setup-intent',
+    savePaymentMethod: '/users/save-payment-method',
+
+    createAuction: '/auctions/',
+    getActiveAuctions: '/auctions/',
+    getAuctionDetails: (auctionId) => `/auctions/${auctionId}`,
+    placeBid: (auctionId) => `/auctions/${auctionId}/bids`,
+    paymentInfo: '/users/payment-info',
+    removePaymentMethod: '/users/payment-method',
 };
