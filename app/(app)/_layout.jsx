@@ -18,6 +18,7 @@ export default function AppLayout() {
                 <Ionicons name="arrow-back" size={ICON_SIZES.lg} color={COLORS.primaryGreen} />
             </TouchableOpacity>
         ),
+
     };
 
     return (
@@ -28,13 +29,6 @@ export default function AppLayout() {
                 options={{
                     ...defaultHeaderOptions,
                     title: 'Domain Registration',
-                }}
-            />
-            <Stack.Screen
-                name="checkout"
-                options={{
-                    ...defaultHeaderOptions,
-                    title: 'Checkout',
                 }}
             />
             <Stack.Screen

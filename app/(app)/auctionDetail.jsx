@@ -6,6 +6,8 @@ import { fetchUser } from '../../src/services/userService';
 import { COLORS } from '../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS } from '../../src/constants/dimensions';
 import { globalStyles } from '../../src/styles/globalStyles';
+import { useRouter } from 'expo-router';
+import { formatBidTimestamp } from '../../src/utils/timeUtils';
 
 const AuctionDetailPage = () => {
     const { auctionId } = useLocalSearchParams();
@@ -15,7 +17,7 @@ const AuctionDetailPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [user, setUser] = useState(null);
-
+    const router = useRouter();
     useFocusEffect(
         useCallback(() => {
             async function loadData() {
@@ -64,7 +66,20 @@ const AuctionDetailPage = () => {
             setAuction(updatedAuction);
             Alert.alert("Success", "Your bid has been placed successfully.");
         } catch (err) {
-            Alert.alert("Error", err.message || "Failed to place bid.");
+            if (err.message && err.message.includes("Setup payment method not found")) {
+                Alert.alert(
+                    "Payment Method Required",
+                    "A payment method is required to place a bid. Please add one now.",
+                    [
+                        {
+                            text: "Ok",
+                            onPress: () => router.push('/(app)/addPaymentMethod')
+                        }
+                    ]
+                );
+            } else {
+                Alert.alert("Error", err.message || "Failed to place bid.");
+            }
         } finally {
             setSubmitting(false);
         }
@@ -72,8 +87,11 @@ const AuctionDetailPage = () => {
 
     const BidItem = ({ item }) => (
         <View style={styles.bidItem}>
-            <Text style={styles.bidder}>{item.bidder_username === user?.username ? "You" : item.bidder_username}</Text>
-            <Text style={styles.bidAmount}>${parseFloat(item.amount).toFixed(2)}</Text>
+            <View style={styles.bidderContainer}>
+                <Text style={styles.bidder}>{item.bidder_username === user?.username ? "You" : item.bidder_username}</Text>
+                <Text style={styles.bidTime}>{formatBidTimestamp(item.created_at)}</Text>
+            </View>
+            <Text style={styles.bidAmount}>${parseFloat(item.bid_amount).toFixed(2)}</Text>
         </View>
     );
 
@@ -183,11 +201,12 @@ const styles = StyleSheet.create({
     },
     cardTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', color: COLORS.primaryGreen, marginBottom: SPACING.md },
     bidHistoryCard: { marginTop: SPACING.lg },
-    bidItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-    bidder: { color: COLORS.textPrimary, fontSize: FONT_SIZES.md },
-    bidAmount: { color: COLORS.primaryGreen, fontSize: FONT_SIZES.md, fontWeight: 'bold' },
+    bidItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    bidderContainer: { flex: 1, marginRight: SPACING.sm },
+    bidder: { color: COLORS.textPrimary, fontSize: FONT_SIZES.md, fontWeight: '600' },
+    bidTime: { color: COLORS.textSecondary, fontSize: FONT_SIZES.xs, marginTop: SPACING.xs },
+    bidAmount: { color: COLORS.primaryGreen, fontSize: FONT_SIZES.lg, fontWeight: 'bold' },
     emptyBidsText: { color: COLORS.textSecondary, textAlign: 'center', padding: SPACING.md },
 });
-
 
 export default AuctionDetailPage;

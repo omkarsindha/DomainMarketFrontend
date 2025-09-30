@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ScrollView, ActivityIndicator, Alert, SafeAreaView, Keyboard, Platform, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, ActivityIndicator, Alert, SafeAreaView, Keyboard, Platform, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { checkDomainAvailability, fetchTrendingDomains } from '../../../src/services/domainService';
-import { getToken }
-  from '../../../src/services/authService';
+import { getToken } from '../../../src/services/authService';
 import { useAuth } from '../../_layout';
 import { useFavorites } from '../../../src/context/FavoritesContext';
 import { COLORS } from '../../../src/constants/colors';
-import { FONT_SIZES, SPACING, BORDER_RADIUS, ICON_SIZES, SCREEN_HEIGHT } from '../../../src/constants/dimensions';
+import { FONT_SIZES, SPACING, BORDER_RADIUS, ICON_SIZES } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
 
 const DomainCard = ({ item, onPress, onToggleFavorite, isFavorite }) => (
@@ -35,11 +34,10 @@ const DomainCard = ({ item, onPress, onToggleFavorite, isFavorite }) => (
   </Pressable>
 );
 
-
 const SearchPage = () => {
   const router = useRouter();
   const { logout: contextLogout } = useAuth();
-  const { favorites, toggleFavorite, isFavorite: isDomainFavoriteGlobally, isLoadingFavorites } = useFavorites();
+  const { toggleFavorite, isFavorite: isDomainFavoriteGlobally } = useFavorites();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchedDomainResult, setSearchedDomainResult] = useState(null);
@@ -53,11 +51,7 @@ const SearchPage = () => {
     Alert.alert(
       "Session Expired",
       "Your session has expired. Please login again.",
-      [{
-        text: "Login", onPress: async () => {
-          await contextLogout();
-        }
-      }]
+      [{ text: "Login", onPress: async () => { await contextLogout(); } }]
     );
   }, [contextLogout]);
 
@@ -69,15 +63,11 @@ const SearchPage = () => {
           setError(null);
           try {
             const token = await getToken();
-            if (!token) {
-              handleAuthenticationError();
-              return;
-            }
+            if (!token) { handleAuthenticationError(); return; }
             const trendingData = await fetchTrendingDomains();
             setTrendingDomains(trendingData || []);
           } catch (err) {
-            console.error("Error fetching trending domains:", err);
-            if (err.message.includes("Unauthorized") || err.message.includes("401")) {
+            if (err.message.includes("Unauthorized")) {
               handleAuthenticationError();
             } else {
               setError("Failed to fetch trending domains.");
@@ -91,23 +81,16 @@ const SearchPage = () => {
     }, [handleAuthenticationError, searchQuery, searchedDomainResult])
   );
 
-
   const handleSearchDomain = async () => {
     Keyboard.dismiss();
-    if (!searchQuery.trim()) {
-      setError("Please enter a domain name.");
-      return;
-    }
+    if (!searchQuery.trim()) { setError("Please enter a domain name."); return; }
     setLoadingSearch(true);
     setError(null);
     setSearchedDomainResult(null);
     setSuggestedDomains([]);
     try {
       const token = await getToken();
-      if (!token) {
-        handleAuthenticationError();
-        return;
-      }
+      if (!token) { handleAuthenticationError(); return; }
       const data = await checkDomainAvailability(searchQuery.trim().toLowerCase());
       if (data.domain) {
         setSearchedDomainResult(data.domain);
@@ -119,8 +102,7 @@ const SearchPage = () => {
       }
       setSuggestedDomains(data.suggestions || []);
     } catch (err) {
-      console.error("Error searching domain:", err);
-      if (err.message.includes("Unauthorized") || err.message.includes("401")) {
+      if (err.message.includes("Unauthorized")) {
         handleAuthenticationError();
       } else {
         setError(err.message || "Failed to fetch domain data.");
@@ -137,32 +119,10 @@ const SearchPage = () => {
     });
   };
 
-  const renderResults = () => {
-    if (!loadingSearch && !searchedDomainResult && suggestedDomains.length === 0 && !error && !searchQuery.trim()) {
-      if (loadingTrending) return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
-      if (trendingDomains.length > 0) {
-        return (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Trending Domains</Text>
-            <FlatList
-              data={trendingDomains}
-              keyExtractor={(item, index) => item.domain || `trending-${index}`}
-              renderItem={({ item }) => (
-                <DomainCard
-                  item={item}
-                  onPress={handleDomainSelect}
-                  onToggleFavorite={toggleFavorite}
-                  isFavorite={isDomainFavoriteGlobally(item.domain)}
-                />
-              )}
-            />
-          </View>
-        );
-      }
-      return <Text style={styles.infoText}>Start by searching for a domain.</Text>;
+  const renderListHeader = () => {
+    if (loadingSearch) {
+      return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
     }
-
-    if (loadingSearch) return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
 
     return (
       <>
@@ -178,26 +138,60 @@ const SearchPage = () => {
           </View>
         )}
         {suggestedDomains.length > 0 && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Suggestions</Text>
-            <FlatList
-              data={suggestedDomains}
-              keyExtractor={(item, index) => item.domain || `suggestion-${index}`}
-              renderItem={({ item }) => (
-                <DomainCard
-                  item={item}
-                  onPress={handleDomainSelect}
-                  onToggleFavorite={toggleFavorite}
-                  isFavorite={isDomainFavoriteGlobally(item.domain)}
-                />
-              )}
-            />
-          </View>
-        )}
-        {!searchedDomainResult && suggestedDomains.length === 0 && error && !error.includes("unavailable") && (
-          <Text style={styles.infoText}>No suggestions found for this search.</Text>
+          <Text style={styles.sectionTitle}>Suggestions</Text>
         )}
       </>
+    );
+  };
+
+  const renderContent = () => {
+    const isInitialState = !loadingSearch && !searchedDomainResult && suggestedDomains.length === 0 && !error && !searchQuery.trim();
+
+    if (isInitialState) {
+      if (loadingTrending) return <ActivityIndicator size="large" color={COLORS.primaryGreen} style={{ marginTop: SPACING.xl }} />;
+      if (trendingDomains.length > 0) {
+        return (
+          <FlatList
+            data={trendingDomains}
+            keyExtractor={(item, index) => item.domain || `trending-${index}`}
+            renderItem={({ item }) => (
+              <DomainCard
+                item={item}
+                onPress={handleDomainSelect}
+                onToggleFavorite={toggleFavorite}
+                isFavorite={isDomainFavoriteGlobally(item.domain)}
+              />
+            )}
+            ListHeaderComponent={<Text style={styles.sectionTitle}>Trending Domains</Text>}
+            contentContainerStyle={styles.resultsScrollContent}
+            showsVerticalScrollIndicator={false}
+          />
+        );
+      }
+      return <Text style={styles.infoText}>Start by searching for a domain.</Text>;
+    }
+
+    return (
+      <FlatList
+        data={suggestedDomains}
+        keyExtractor={(item, index) => item.domain || `suggestion-${index}`}
+        renderItem={({ item }) => (
+          <DomainCard
+            item={item}
+            onPress={handleDomainSelect}
+            onToggleFavorite={toggleFavorite}
+            isFavorite={isDomainFavoriteGlobally(item.domain)}
+          />
+        )}
+        ListHeaderComponent={renderListHeader}
+        ListEmptyComponent={
+          !loadingSearch && !searchedDomainResult &&
+          <Text style={styles.infoText}>No suggestions found for this search.</Text>
+        }
+        contentContainerStyle={styles.resultsScrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      />
     );
   };
 
@@ -228,14 +222,10 @@ const SearchPage = () => {
           </View>
         )}
 
-        <ScrollView
-          style={styles.resultsScroll}
-          contentContainerStyle={styles.resultsScrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {renderResults()}
-        </ScrollView>
+        <View style={styles.resultsContainer}>
+          {renderContent()}
+        </View>
+
       </LinearGradient>
     </SafeAreaView>
   );
@@ -245,14 +235,14 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
   gradientBg: { flex: 1 },
   searchBarContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, backgroundColor: COLORS.mediumBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  searchInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: Platform.OS === 'ios' ? SPACING.sm + 2 : SPACING.sm, fontSize: FONT_SIZES.md, backgroundColor: COLORS.darkBg, color: COLORS.textPrimary, marginRight: SPACING.sm, height: 48 /* Consistent height */ },
+  searchInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: Platform.OS === 'ios' ? SPACING.sm + 2 : SPACING.sm, fontSize: FONT_SIZES.md, backgroundColor: COLORS.darkBg, color: COLORS.textPrimary, marginRight: SPACING.sm, height: 48 },
   searchButton: { backgroundColor: COLORS.primaryGreen, padding: SPACING.sm + 2, borderRadius: BORDER_RADIUS.md, justifyContent: 'center', alignItems: 'center', height: 48, width: 48 },
   errorDisplayContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.errorBackground, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, marginHorizontal: SPACING.md, marginTop: SPACING.md, borderRadius: BORDER_RADIUS.sm, borderLeftWidth: 3, borderLeftColor: COLORS.errorBorder },
   errorTextMsg: { color: COLORS.error, fontSize: FONT_SIZES.sm, flex: 1 },
-  resultsScroll: { flex: 1 },
-  resultsScrollContent: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
+  resultsContainer: { flex: 1 },
+  resultsScrollContent: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl, paddingTop: SPACING.sm },
   sectionContainer: { marginTop: SPACING.lg },
-  sectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: "bold", color: COLORS.primaryGreen, marginBottom: SPACING.sm },
+  sectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: "bold", color: COLORS.primaryGreen, marginBottom: SPACING.sm, paddingHorizontal: SPACING.md, paddingTop: SPACING.lg },
   domainCardBase: { marginBottom: SPACING.sm, padding: SPACING.md, backgroundColor: COLORS.mediumBg },
   domainCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: SPACING.xs },
   domainCardName: { fontSize: FONT_SIZES.md, fontWeight: "600", color: COLORS.textPrimary, flex: 1, marginRight: SPACING.sm },
@@ -263,9 +253,6 @@ const styles = StyleSheet.create({
   availabilityText: { fontSize: FONT_SIZES.xs, fontWeight: '600', marginTop: SPACING.sm, textAlign: 'right' },
   available: { color: COLORS.primaryGreenDark },
   unavailable: { color: COLORS.error },
-  tldContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.xs },
-  tldChip: { backgroundColor: COLORS.mediumBg, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: COLORS.primaryGreen },
-  tldText: { color: COLORS.primaryGreen, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   infoText: { textAlign: 'center', color: COLORS.textSecondary, fontSize: FONT_SIZES.md, marginTop: SPACING.xl, paddingHorizontal: SPACING.lg },
 });
 

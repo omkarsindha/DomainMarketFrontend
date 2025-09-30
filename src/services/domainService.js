@@ -1,20 +1,25 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
 import { getToken } from './authService';
 
-export const registerDomain = async (domainName, years) => {
+export const registerDomain = async (domainName, price, years) => {
     const token = await getToken();
     if (!token) {
         throw new Error("Authentication required. Please login.");
     }
 
     const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.registerDomain(domainName, years)}`,
+        `${API_BASE_URL}${API_ENDPOINTS.purchaseDomain}`,
         {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
             },
+            body: JSON.stringify({
+                domain: domainName,
+                price: parseFloat(price),
+                years: parseInt(years, 10),
+            }),
         }
     );
 

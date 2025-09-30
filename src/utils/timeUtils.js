@@ -30,3 +30,12 @@ export const formatTimeRemaining = (endTimeString) => {
 
     return "Ending soon";
 };
+
+export const formatBidTimestamp = (isoString) => {
+    if (!isoString) return '';
+    return new Date(isoString).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
+};

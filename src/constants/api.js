@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
     myTransactions: '/users/my-transactions',
     trendingDomains: '/domains/trending-domains',
     registerDomain: (domain, years) => `/domains/register?domain=${encodeURIComponent(domain)}&years=${years}`,
+    purchaseDomain: `/domains/purchase-domain`,
     checkDomain: '/domains/check',
     trendingTlds: '/domains/trending-tlds',
 
