@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert, Platform, Activ
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../_layout';
 
+
 import { fetchUser } from '../../../src/services/userService';
 import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, ICON_SIZES } from '../../../src/constants/dimensions';
@@ -103,6 +104,11 @@ const ProfilePage = () => {
             <Text style={styles.menuItemText}>Manage Payment Method</Text>
             <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
           </Pressable>
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/editProfile')}>
+             <Ionicons name="create-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+             <Text style={styles.menuItemText}>Edit User Details</Text>
+             <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
+           </Pressable>
         </View>
 
         <Pressable
