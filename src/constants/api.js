@@ -24,4 +24,12 @@ export const API_ENDPOINTS = {
     placeBid: (auctionId) => `/auctions/${auctionId}/bids`,
     paymentInfo: '/users/payment-info',
     removePaymentMethod: '/users/payment-method',
+    
+    createListing: '/listings/',
+    getActiveListings: '/listings/',
+    getMyListings: '/listings/my-listings',
+    getMyPurchases: '/listings/my-purchases',
+    getListingDetails: (listingId) => `/listings/${listingId}`,
+    purchaseListing: (listingId) => `/listings/${listingId}/purchase`,
+    cancelListing: (listingId) => `/listings/${listingId}`,
 };

@@ -24,9 +24,9 @@ const CreateAuctionPage = () => {
             try {
                 const domains = await fetchMyDomains();
                 setMyDomains(domains);
-                if (domains.length > 0) {
-                    setSelectedDomain(domains[0].domain_name);
-                }
+                // if (domains.length > 0) {
+                //     setSelectedDomain(domains[0].domain_name);
+                // }
             } catch (err) {
                 setError(err.message || "Could not load your domains.");
             } finally {
@@ -68,59 +68,85 @@ const CreateAuctionPage = () => {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView contentContainerStyle={styles.container}>
-                <View style={globalStyles.card}>
-                    <Text style={styles.label}>Select Domain</Text>
-                    {myDomains.length > 0 ? (
-                        <View style={styles.pickerContainer}>
-                            <Picker
-                                selectedValue={selectedDomain}
-                                onValueChange={(itemValue) => setSelectedDomain(itemValue)}
-                                style={styles.picker}
-                                itemStyle={styles.pickerItem}
-                            >
-                                {myDomains.map((domain) => (
-                                    <Picker.Item key={domain.id} label={domain.domain_name} value={domain.domain_name} />
-                                ))}
-                            </Picker>
-                        </View>
-                    ) : (
-                        <Text style={styles.errorText}>You don't own any domains to auction.</Text>
-                    )}
-
-                    <Text style={styles.label}>Start Price ($)</Text>
-                    <TextInput
-                        style={globalStyles.input}
-                        placeholder="e.g., 10.50"
-                        placeholderTextColor={COLORS.textSecondary}
-                        value={startPrice}
-                        onChangeText={setStartPrice}
-                        keyboardType="numeric"
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={globalStyles.card}>
+            <Text style={styles.label}>Select Domain</Text>
+            {myDomains.length > 0 ? (
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedDomain}
+                  onValueChange={(itemValue) => setSelectedDomain(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item
+                    label="-- Select a domain --"
+                    value=""
+                    enabled={false}
+                    color={COLORS.textSecondary}
+                  />
+                  {myDomains.map((domain) => (
+                    <Picker.Item
+                      key={domain.id}
+                      label={domain.domain_name}
+                      value={domain.domain_name}
                     />
+                  ))}
+                </Picker>
+              </View>
+            ) : (
+              <Text style={styles.errorText}>
+                You don't own any domains to auction.
+              </Text>
+            )}
 
-                    <Text style={styles.label}>Duration (Days)</Text>
-                    <TextInput
-                        style={globalStyles.input}
-                        placeholder="e.g., 7"
-                        placeholderTextColor={COLORS.textSecondary}
-                        value={duration}
-                        onChangeText={setDuration}
-                        keyboardType="numeric"
-                    />
+            <Text style={styles.label}>Start Price ($)</Text>
+            <TextInput
+              style={globalStyles.input}
+              placeholder="e.g., 10.50"
+              placeholderTextColor={COLORS.textSecondary}
+              value={startPrice}
+              onChangeText={setStartPrice}
+              keyboardType="numeric"
+            />
 
-                    {error && <Text style={[globalStyles.errorText, { marginTop: SPACING.md }]}>{error}</Text>}
+            <Text style={styles.label}>Duration (Days)</Text>
+            <TextInput
+              style={globalStyles.input}
+              placeholder="e.g., 7"
+              placeholderTextColor={COLORS.textSecondary}
+              value={duration}
+              onChangeText={setDuration}
+              keyboardType="numeric"
+            />
 
-                    <Pressable
-                        style={({ pressed }) => [globalStyles.button, styles.actionButton, (saving || myDomains.length === 0) && globalStyles.buttonDisabled, pressed && !saving && { backgroundColor: COLORS.primaryGreenDark }]}
-                        onPress={handleCreateAuction}
-                        disabled={saving || myDomains.length === 0}
-                    >
-                        {saving ? <ActivityIndicator color={COLORS.textOnPrimaryGreen} /> : <Text style={globalStyles.buttonText}>Create Auction</Text>}
-                    </Pressable>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
+            {error && (
+              <Text style={[globalStyles.errorText, { marginTop: SPACING.md }]}>
+                {error}
+              </Text>
+            )}
+
+            <Pressable
+              style={({ pressed }) => [
+                globalStyles.button,
+                styles.actionButton,
+                (saving || myDomains.length === 0) &&
+                  globalStyles.buttonDisabled,
+                pressed &&
+                  !saving && { backgroundColor: COLORS.primaryGreenDark },
+              ]}
+              onPress={handleCreateAuction}
+              disabled={saving || myDomains.length === 0}
+            >
+              {saving ? (
+                <ActivityIndicator color={COLORS.textOnPrimaryGreen} />
+              ) : (
+                <Text style={globalStyles.buttonText}>Create Auction</Text>
+              )}
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
 };
 
@@ -128,8 +154,20 @@ const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
     container: { padding: SPACING.md },
     label: { fontSize: FONT_SIZES.md, color: COLORS.textPrimary, marginBottom: SPACING.sm, marginTop: SPACING.md },
-    pickerContainer: { borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.sm, marginBottom: SPACING.md },
-    picker: { color: COLORS.textPrimary, height: 50 },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: BORDER_RADIUS.sm,
+        marginBottom: SPACING.md,
+        backgroundColor: COLORS.mediumBg,   
+        height: 50,                        
+        justifyContent: 'center',          
+      },
+      picker: {
+        color: COLORS.textPrimary,
+        width: '100%',
+      },
+      
     pickerItem: { color: COLORS.textPrimary, backgroundColor: COLORS.mediumBg },
     actionButton: { marginTop: SPACING.lg },
     errorText: { color: COLORS.error, textAlign: 'center', marginTop: SPACING.sm },
