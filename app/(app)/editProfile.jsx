@@ -1,4 +1,3 @@
-// app/(app)/editProfile.jsx
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable, ActivityIndicator, Alert, Platform, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +7,6 @@ import { COLORS } from '../../src/constants/colors';
 import { FONT_SIZES, SPACING, ICON_SIZES } from '../../src/constants/dimensions';
 import { globalStyles } from '../../src/styles/globalStyles';
 
-// ✅ Reuse InputField style from domainBuy.jsx
 const InputField = ({ label, value, onChangeText, placeholder, keyboardType = 'default', width = '100%', error }) => (
   <View style={[styles.inputFieldContainer, { width }]}>
     <Text style={styles.inputLabel}>{label}</Text>
@@ -99,11 +97,9 @@ const EditProfilePage = () => {
 
   return (
     <>
-      {/* ✅ Hide default Expo header */}
       <Stack.Screen options={{ headerShown: false }} />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* ✅ Custom app-themed header */}
         <View style={styles.headerContainer}>
           <Ionicons
             name="arrow-back-outline"
@@ -114,7 +110,6 @@ const EditProfilePage = () => {
           <Text style={styles.headerTitle}>Edit Profile</Text>
         </View>
 
-        {/* ✅ Main content */}
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={[globalStyles.card, styles.cardCustom]}>
             <View style={styles.cardHeader}>
@@ -156,7 +151,6 @@ const EditProfilePage = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
 
-  // ✅ Custom header styles
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
