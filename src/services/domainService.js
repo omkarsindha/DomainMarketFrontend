@@ -1,6 +1,38 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
 import { getToken } from './authService';
 
+const handleResponse = async (response) => {
+    try {
+        const data = await response.json();
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error("Unauthorized: Please login again.");
+            }
+            throw new Error(data.detail || `Server error: ${response.status}`);
+        }
+        return data;
+    } catch (e) {
+        if (e instanceof SyntaxError) {
+            console.error("Failed to parse JSON from server.");
+            throw new Error(`An unexpected server error occurred. Status: ${response.status}`);
+        }
+        throw e;
+    }
+};
+
+const getHeaders = async (includeContentType = true) => {
+    const token = await getToken();
+    if (!token) throw new Error("Authentication required.");
+
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+    };
+    if (includeContentType) {
+        headers['Content-Type'] = 'application/json';
+    }
+    return headers;
+};
+
 export const registerDomain = async (domainName, price, years) => {
     const token = await getToken();
     if (!token) {
@@ -105,4 +137,35 @@ export const fetchMyDomains = async () => {
         throw new Error(data.detail || 'Error fetching your domains');
     }
     return data;
+};
+
+
+export const getDnsRecords = async (sld, tld) => {
+    const headers = await getHeaders();
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.getDnsRecords(sld, tld)}`, {
+        method: 'GET',
+        headers: { 'Authorization': headers.Authorization },
+    });
+    return handleResponse(response);
+};
+
+export const updateDnsRecords = async (sld, tld, records) => {
+    const headers = await getHeaders();
+
+    const formattedRecords = records.map(r => ({
+        hostname: r.hostname,
+        record_type: r.record_type,
+        address: r.address,
+        ttl: Number(r.ttl) || 1800, // Ensure ttl is a number
+        mx_pref: Number(r.mx_pref) || 10, // Ensure mx_pref is a number
+    }));
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.updateDnsRecords(sld, tld)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ records: formattedRecords }), // The body must be an object with a "records" key
+    });
+
+    // The handleResponse function you already have will process the success or error
+    return handleResponse(response);
 };

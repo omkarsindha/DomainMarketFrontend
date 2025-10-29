@@ -59,6 +59,34 @@ export default function AppLayout() {
                     title: 'Add Payment Method',
                 }}
             />
+            <Stack.Screen
+                name="createListing"
+                options={{
+                    ...defaultHeaderOptions,
+                    title: 'Create Listing',
+                }}
+            />
+            <Stack.Screen
+                name="myAuctions"
+                options={{
+                    ...defaultHeaderOptions,
+                    title: 'My Auctions',
+                }}
+            />
+            <Stack.Screen
+                name="myListings"
+                options={{
+                    ...defaultHeaderOptions,
+                    title: 'My Listings',
+                }}
+            />
+            <Stack.Screen
+                name="domainManagement"
+                options={{
+                    ...defaultHeaderOptions,
+                    title: 'Manage DNS',
+                }}
+            />
         </Stack >
     );
 }

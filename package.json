@@ -25,6 +25,7 @@
     "@react-navigation/stack": "^7.1.1",
     "@stripe/react-stripe-js": "^3.6.0",
     "@stripe/stripe-js": "^7.0.0",
+    "@stripe/stripe-react-native": "0.38.6",
     "all": "^0.0.0",
     "axios": "^1.8.4",
     "expo": "~52.0.41",
@@ -52,8 +53,7 @@
     "react-native-svg": "^15.8.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "react-navigation": "^5.0.0",
-    "@stripe/stripe-react-native": "0.38.6"
+    "react-navigation": "^5.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

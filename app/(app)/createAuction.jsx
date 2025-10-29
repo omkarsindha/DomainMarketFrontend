@@ -9,168 +9,176 @@ import { FONT_SIZES, SPACING, BORDER_RADIUS } from '../../src/constants/dimensio
 import { globalStyles } from '../../src/styles/globalStyles';
 
 const CreateAuctionPage = () => {
-    const router = useRouter();
-    const [myDomains, setMyDomains] = useState([]);
-    const [selectedDomain, setSelectedDomain] = useState('');
-    const [startPrice, setStartPrice] = useState('');
-    const [duration, setDuration] = useState('7');
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
+  const router = useRouter();
+  const [myDomains, setMyDomains] = useState([]);
+  const [selectedDomain, setSelectedDomain] = useState('');
+  const [startPrice, setStartPrice] = useState('');
+  const [duration, setDuration] = useState('7');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-    useEffect(() => {
-        const loadDomains = async () => {
-            setLoading(true);
-            try {
-                const domains = await fetchMyDomains();
-                setMyDomains(domains);
-                // if (domains.length > 0) {
-                //     setSelectedDomain(domains[0].domain_name);
-                // }
-            } catch (err) {
-                setError(err.message || "Could not load your domains.");
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadDomains();
-    }, []);
-
-    const handleCreateAuction = async () => {
-        if (!selectedDomain || !startPrice || !duration) {
-            setError("Please fill all fields.");
-            return;
-        }
-        if (isNaN(parseFloat(startPrice)) || parseFloat(startPrice) <= 0) {
-            setError("Please enter a valid start price.");
-            return;
-        }
-        setSaving(true);
-        setError('');
-        try {
-            await createAuction({
-                domain_name: selectedDomain,
-                start_price: parseFloat(startPrice),
-                duration_days: parseInt(duration, 10),
-            });
-            Alert.alert("Success", "Your auction has been created successfully.", [
-                { text: "OK", onPress: () => router.back() }
-            ]);
-        } catch (err) {
-            setError(err.message || "Failed to create auction.");
-        } finally {
-            setSaving(false);
-        }
+  useEffect(() => {
+    const loadDomains = async () => {
+      setLoading(true);
+      try {
+        const domains = await fetchMyDomains();
+        const availableDomains = domains.filter(domain => !domain.is_auctioned && !domain.is_listed);
+        setMyDomains(availableDomains);
+      } catch (err) {
+        setError(err.message || "Could not load your domains.");
+      } finally {
+        setLoading(false);
+      }
     };
+    loadDomains();
+  }, []);
 
-    if (loading) {
-        return <View style={globalStyles.centeredContainer}><ActivityIndicator size="large" color={COLORS.primaryGreen} /></View>;
+  const handleCreateAuction = async () => {
+    if (!selectedDomain || !startPrice || !duration) {
+      setError("Please fill all fields.");
+      return;
     }
+    if (isNaN(parseFloat(startPrice)) || parseFloat(startPrice) <= 0) {
+      setError("Please enter a valid start price.");
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      await createAuction({
+        domain_name: selectedDomain,
+        start_price: parseFloat(startPrice),
+        duration_days: parseInt(duration, 10),
+      });
+      Alert.alert("Success", "Your auction has been created successfully.", [
+        { text: "OK", onPress: () => router.back() }
+      ]);
+    } catch (err) {
+      setError(err.message || "Failed to create auction.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <View style={globalStyles.card}>
-            <Text style={styles.label}>Select Domain</Text>
-            {myDomains.length > 0 ? (
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedDomain}
-                  onValueChange={(itemValue) => setSelectedDomain(itemValue)}
-                  style={styles.picker}
-                >
+  if (loading) {
+    return <View style={globalStyles.centeredContainer}><ActivityIndicator size="large" color={COLORS.primaryGreen} /></View>;
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={globalStyles.card}>
+          <Text style={styles.label}>Select Domain</Text>
+          {myDomains.length > 0 ? (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedDomain}
+                onValueChange={(itemValue) => setSelectedDomain(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item
+                  label="-- Select a domain --"
+                  value=""
+                  enabled={false}
+                  color={COLORS.textSecondary}
+                />
+                {myDomains.map((domain) => (
                   <Picker.Item
-                    label="-- Select a domain --"
-                    value=""
-                    enabled={false}
-                    color={COLORS.textSecondary}
+                    key={domain.id}
+                    label={domain.domain_name}
+                    value={domain.domain_name}
                   />
-                  {myDomains.map((domain) => (
-                    <Picker.Item
-                      key={domain.id}
-                      label={domain.domain_name}
-                      value={domain.domain_name}
-                    />
-                  ))}
-                </Picker>
-              </View>
+                ))}
+              </Picker>
+            </View>
+          ) : (
+            <Text style={styles.errorText}>
+              You don't own any domains to auction.
+            </Text>
+          )}
+
+          <Text style={styles.label}>Start Price ($)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., 10.50"
+            placeholderTextColor={COLORS.textSecondary}
+            value={startPrice}
+            onChangeText={setStartPrice}
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.label}>Duration (Days)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., 7"
+            placeholderTextColor={COLORS.textSecondary}
+            value={duration}
+            onChangeText={setDuration}
+            keyboardType="numeric"
+          />
+
+          {error && (
+            <Text style={[globalStyles.errorText, { marginTop: SPACING.md }]}>
+              {error}
+            </Text>
+          )}
+
+          <Pressable
+            style={({ pressed }) => [
+              globalStyles.button,
+              styles.actionButton,
+              (saving || myDomains.length === 0) &&
+              globalStyles.buttonDisabled,
+              pressed &&
+              !saving && { backgroundColor: COLORS.primaryGreenDark },
+            ]}
+            onPress={handleCreateAuction}
+            disabled={saving || myDomains.length === 0}
+          >
+            {saving ? (
+              <ActivityIndicator color={COLORS.textOnPrimaryGreen} />
             ) : (
-              <Text style={styles.errorText}>
-                You don't own any domains to auction.
-              </Text>
+              <Text style={globalStyles.buttonText}>Create Auction</Text>
             )}
-
-            <Text style={styles.label}>Start Price ($)</Text>
-            <TextInput
-              style={globalStyles.input}
-              placeholder="e.g., 10.50"
-              placeholderTextColor={COLORS.textSecondary}
-              value={startPrice}
-              onChangeText={setStartPrice}
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.label}>Duration (Days)</Text>
-            <TextInput
-              style={globalStyles.input}
-              placeholder="e.g., 7"
-              placeholderTextColor={COLORS.textSecondary}
-              value={duration}
-              onChangeText={setDuration}
-              keyboardType="numeric"
-            />
-
-            {error && (
-              <Text style={[globalStyles.errorText, { marginTop: SPACING.md }]}>
-                {error}
-              </Text>
-            )}
-
-            <Pressable
-              style={({ pressed }) => [
-                globalStyles.button,
-                styles.actionButton,
-                (saving || myDomains.length === 0) &&
-                  globalStyles.buttonDisabled,
-                pressed &&
-                  !saving && { backgroundColor: COLORS.primaryGreenDark },
-              ]}
-              onPress={handleCreateAuction}
-              disabled={saving || myDomains.length === 0}
-            >
-              {saving ? (
-                <ActivityIndicator color={COLORS.textOnPrimaryGreen} />
-              ) : (
-                <Text style={globalStyles.buttonText}>Create Auction</Text>
-              )}
-            </Pressable>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
+          </Pressable>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
-    container: { padding: SPACING.md },
-    label: { fontSize: FONT_SIZES.md, color: COLORS.textPrimary, marginBottom: SPACING.sm, marginTop: SPACING.md },
-    pickerContainer: {
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: BORDER_RADIUS.sm,
-        marginBottom: SPACING.md,
-        backgroundColor: COLORS.mediumBg,   
-        height: 50,                        
-        justifyContent: 'center',          
-      },
-      picker: {
-        color: COLORS.textPrimary,
-        width: '100%',
-      },
-      
-    pickerItem: { color: COLORS.textPrimary, backgroundColor: COLORS.mediumBg },
-    actionButton: { marginTop: SPACING.lg },
-    errorText: { color: COLORS.error, textAlign: 'center', marginTop: SPACING.sm },
+  safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
+  container: { padding: SPACING.md },
+  label: { fontSize: FONT_SIZES.md, color: COLORS.textPrimary, marginBottom: SPACING.sm, marginTop: SPACING.md },
+  input: {
+    height: 50,
+    backgroundColor: COLORS.mediumBg,
+    borderRadius: BORDER_RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.textPrimary,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.sm,
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.mediumBg,
+    height: 50,
+    justifyContent: 'center',
+  },
+  picker: {
+    color: COLORS.textPrimary,
+    width: '100%',
+  },
+
+  pickerItem: { color: COLORS.textPrimary, backgroundColor: COLORS.mediumBg },
+  actionButton: { marginTop: SPACING.lg },
+  errorText: { color: COLORS.error, textAlign: 'center', marginTop: SPACING.sm },
 });
 
 export default CreateAuctionPage;

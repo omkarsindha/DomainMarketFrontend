@@ -6,8 +6,11 @@ import { fetchMyDomains } from '../../../src/services/domainService';
 import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS, ICON_SIZES, SCREEN_HEIGHT } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
+import { useRouter } from 'expo-router';
+
 
 const HomePage = () => {
+  const router = useRouter();
   const [myDomains, setMyDomains] = useState([]);
   const [portfolioValue, setPortfolioValue] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -54,7 +57,13 @@ const HomePage = () => {
   };
 
   const renderDomainItem = ({ item }) => (
-    <View style={styles.domainItemContainer}>
+    <TouchableOpacity
+      style={styles.domainItemContainer}
+      onPress={() => router.push({
+        pathname: '/(app)/domainManagement',
+        params: { domainName: item.domain_name }
+      })}
+    >
       <View style={styles.domainInfo}>
         <Text style={styles.domainNameText} numberOfLines={1}>{item.domain_name}</Text>
         <Text style={styles.domainDateText}>
@@ -65,8 +74,9 @@ const HomePage = () => {
         <Text style={styles.domainPriceText}>
           ${(Number(item.price) || 0).toFixed(2)}
         </Text>
+        <Ionicons name="chevron-forward" size={ICON_SIZES.md} color={COLORS.textSecondary} style={{ marginTop: SPACING.xs }} />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderPortfolioHeader = () => (
@@ -138,7 +148,15 @@ const styles = StyleSheet.create({
   portfolioCard: { backgroundColor: COLORS.mediumBg, borderRadius: BORDER_RADIUS.md, padding: SPACING.lg, alignItems: 'center', marginBottom: SPACING.lg, borderWidth: 1, borderColor: COLORS.primaryGreenDark },
   portfolioLabel: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary, marginBottom: SPACING.sm },
   portfolioValue: { fontSize: FONT_SIZES.title, fontWeight: 'bold', color: COLORS.primaryGreen },
-  domainItemContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.md, marginBottom: SPACING.sm, backgroundColor: COLORS.mediumBg, borderRadius: BORDER_RADIUS.md },
+  domainItemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    backgroundColor: COLORS.mediumBg,
+    borderRadius: BORDER_RADIUS.md
+  },
   domainInfo: { flex: 1, marginRight: SPACING.sm },
   domainNameText: { fontSize: FONT_SIZES.lg, fontWeight: '600', color: COLORS.textPrimary, marginBottom: SPACING.xs },
   domainDateText: { fontSize: FONT_SIZES.xs, color: COLORS.textSecondary },

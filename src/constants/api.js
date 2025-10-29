@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = 'http://10.0.2.2:8000';
 
 export const API_ENDPOINTS = {
 
@@ -24,7 +24,8 @@ export const API_ENDPOINTS = {
     placeBid: (auctionId) => `/auctions/${auctionId}/bids`,
     paymentInfo: '/users/payment-info',
     removePaymentMethod: '/users/payment-method',
-    
+    getMySellingAuctions: '/auctions/my-selling-auctions',
+    cancelAuction: (auctionId) => `/auctions/${auctionId}`,
     createListing: '/listings/',
     getActiveListings: '/listings/',
     getMyListings: '/listings/my-listings',
@@ -32,4 +33,7 @@ export const API_ENDPOINTS = {
     getListingDetails: (listingId) => `/listings/${listingId}`,
     purchaseListing: (listingId) => `/listings/${listingId}/purchase`,
     cancelListing: (listingId) => `/listings/${listingId}`,
+
+    getDnsRecords: (sld, tld) => `/domains/manage/${sld}/${tld}/dns`,
+    updateDnsRecords: (sld, tld) => `/domains/manage/${sld}/${tld}/dns/update`,
 };

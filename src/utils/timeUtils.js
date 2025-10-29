@@ -1,7 +1,7 @@
 export const formatTimeRemaining = (endTimeString) => {
     const endTime = new Date(endTimeString).getTime();
     const now = new Date().getTime();
-    const difference = endTime - now;
+    const difference = endTime - now; // in milliseconds
 
     if (difference <= 0) {
         return "Ended";

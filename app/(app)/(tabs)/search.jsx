@@ -98,7 +98,7 @@ const SearchPage = () => {
           setError(`"${data.domain.domain}" is unavailable. Check suggestions below.`);
         }
       } else {
-        setError(`Could not get details for "${searchQuery}".`);
+        setError(`"${searchQuery}" is not available try looking at our other suggestions`);
       }
       setSuggestedDomains(data.suggestions || []);
     } catch (err) {

@@ -1,4 +1,3 @@
-// app/(app)/(tabs)/marketplace.jsx
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +11,7 @@ import { globalStyles } from '../../../src/styles/globalStyles';
 
 const MarketplacePage = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('Auctions'); // ✅ fixed
+  const [activeTab, setActiveTab] = useState('Auctions');
   const [auctions, setAuctions] = useState([]);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +38,6 @@ const MarketplacePage = () => {
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  // Auction item card
   const AuctionItem = ({ item }) => {
     const hasBids = item.bids && item.bids.length > 0;
     const displayPrice = hasBids ? (item.current_price || item.start_price) : item.start_price;
@@ -62,7 +60,6 @@ const MarketplacePage = () => {
     );
   };
 
-  // Listing item card (Bazaar) – styled same as AuctionItem
   const ListingItem = ({ item }) => {
     const priceNum = Number(item.price || 0);
 
@@ -151,7 +148,6 @@ const MarketplacePage = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Tabs – shared look */}
       <View style={styles.tabBar}>
         <TouchableOpacity style={[styles.tab, activeTab === 'Auctions' && styles.activeTab]} onPress={() => setActiveTab('Auctions')}>
           <Ionicons name="hammer-outline" size={ICON_SIZES.md} color={activeTab === 'Auctions' ? COLORS.primaryGreen : COLORS.textSecondary} />
@@ -164,8 +160,6 @@ const MarketplacePage = () => {
       </View>
 
       <View style={styles.content}>{renderContent()}</View>
-
-      {/* FAB – same style */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push(activeTab === 'Auctions' ? '/(app)/createAuction' : '/(app)/createListing')}

@@ -19,10 +19,12 @@ const CreateListingPage = () => {
 
   useEffect(() => {
     const loadDomains = async () => {
+      setLoading(true);
       try {
         const domains = await fetchMyDomains();
-        setMyDomains(domains);
-        if (domains.length > 0) setSelectedDomain(domains[0].domain_name);
+        const availableDomains = domains.filter(domain => !domain.is_auctioned && !domain.is_listed);
+        setMyDomains(availableDomains);
+
       } catch (err) {
         setError(err.message || "Could not load domains.");
       } finally {
@@ -64,39 +66,33 @@ const CreateListingPage = () => {
           <Text style={styles.label}>Select Domain</Text>
           {myDomains.length > 0 ? (
             <View style={styles.pickerContainer}>
-              {myDomains.length > 0 ? (
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={selectedDomain}
-                    onValueChange={setSelectedDomain}
-                    style={styles.picker}
-                  >
-                    <Picker.Item
-                      label="-- Select a domain --"
-                      value=""
-                      enabled={false}
-                      color={COLORS.textSecondary}
-                    />
-                    {myDomains.map((domain) => (
-                      <Picker.Item
-                        key={domain.id}
-                        label={domain.domain_name}
-                        value={domain.domain_name}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              ) : (
-                <Text style={styles.errorText}>No domains available.</Text>
-              )}
+              <Picker
+                selectedValue={selectedDomain}
+                onValueChange={(itemValue) => setSelectedDomain(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item
+                  label="-- Select a domain --"
+                  value=""
+                  enabled={false}
+                  color={COLORS.textSecondary}
+                />
+                {myDomains.map((domain) => (
+                  <Picker.Item
+                    key={domain.id}
+                    label={domain.domain_name}
+                    value={domain.domain_name}
+                  />
+                ))}
+              </Picker>
             </View>
           ) : (
-            <Text style={styles.errorText}>No domains available.</Text>
+            <Text style={styles.errorText}>You don't own any domains to list.</Text>
           )}
 
           <Text style={styles.label}>Price ($)</Text>
           <TextInput
-            style={globalStyles.input}
+            style={styles.input}
             placeholder="e.g. 50.00"
             placeholderTextColor={COLORS.textSecondary}
             value={price}
@@ -116,7 +112,7 @@ const CreateListingPage = () => {
               styles.actionButton,
               (saving || myDomains.length === 0) && globalStyles.buttonDisabled,
               pressed &&
-                !saving && { backgroundColor: COLORS.primaryGreenDark },
+              !saving && { backgroundColor: COLORS.primaryGreenDark },
             ]}
             onPress={handleCreateListing}
             disabled={saving || myDomains.length === 0}
@@ -136,21 +132,31 @@ const CreateListingPage = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
   container: { padding: SPACING.md },
-  label: { fontSize: FONT_SIZES.md, color: COLORS.textPrimary, marginBottom: SPACING.sm },
+  label: { fontSize: FONT_SIZES.md, color: COLORS.textPrimary, marginBottom: SPACING.sm, marginTop: SPACING.md },
+  input: {
+    height: 50,
+    backgroundColor: COLORS.mediumBg,
+    borderRadius: BORDER_RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.textPrimary,
+  },
   pickerContainer: {
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.sm,
     marginBottom: SPACING.md,
-    backgroundColor: COLORS.mediumBg,   
-    height: 50,                        
-    justifyContent: 'center',           
+    backgroundColor: COLORS.mediumBg,
+    height: 50,
+    justifyContent: 'center',
   },
   picker: {
     color: COLORS.textPrimary,
     width: '100%',
   },
-  
+
   actionButton: { marginTop: SPACING.lg },
   errorText: { color: COLORS.error, textAlign: 'center', marginTop: SPACING.sm },
 });

@@ -1,80 +1,72 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, Pressable, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { getAuctionDetails, placeBid } from '../../src/services/auctionService';
+import { useLocalSearchParams, useFocusEffect, useRouter } from 'expo-router';
+import { getAuctionDetails, placeBid, cancelAuction } from '../../src/services/auctionService';
 import { fetchUser } from '../../src/services/userService';
 import { COLORS } from '../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS } from '../../src/constants/dimensions';
 import { globalStyles } from '../../src/styles/globalStyles';
-import { useRouter } from 'expo-router';
 import { formatBidTimestamp } from '../../src/utils/timeUtils';
 
 const AuctionDetailPage = () => {
     const { auctionId } = useLocalSearchParams();
+    const router = useRouter();
+
     const [auction, setAuction] = useState(null);
     const [bidAmount, setBidAmount] = useState('');
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
     const [error, setError] = useState('');
     const [user, setUser] = useState(null);
-    const router = useRouter();
-    useFocusEffect(
-        useCallback(() => {
-            async function loadData() {
-                setLoading(true);
-                setError('');
-                try {
-                    const [auctionData, userData] = await Promise.all([
-                        getAuctionDetails(auctionId),
-                        fetchUser()
-                    ]);
-                    setAuction(auctionData);
-                    setUser(userData);
-                } catch (err) {
-                    setError(err.message || "Could not load auction details.");
-                } finally {
-                    setLoading(false);
-                }
-            }
-            loadData();
-        }, [auctionId])
-    );
 
-    useEffect(() => {
-        if (auction) {
-            const basePrice = Math.max(auction.current_price || 0, auction.start_price || 0);
-            const nextBid = basePrice + 1.00;
-            setBidAmount(nextBid.toFixed(2));
+    const loadData = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const [auctionData, userData] = await Promise.all([
+                getAuctionDetails(auctionId),
+                fetchUser()
+            ]);
+            setAuction(auctionData);
+            setUser(userData);
+            const basePrice = Math.max(auctionData.current_highest_bid || 0, auctionData.start_price || 0);
+            const nextBid = basePrice > 0 ? basePrice + 1.00 : auctionData.start_price;
+            setBidAmount(String(nextBid.toFixed(2)));
+        } catch (err) {
+            setError(err.message || "Could not load auction details.");
+        } finally {
+            setLoading(false);
         }
-    }, [auction]);
+    }, [auctionId]);
 
+    useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
     const handlePlaceBid = async () => {
-        const basePrice = Math.max(auction.current_price || 0, auction.start_price || 0);
+        const currentPrice = Math.max(auction.current_highest_bid || 0, auction.start_price || 0);
         if (!bidAmount || isNaN(parseFloat(bidAmount))) {
             Alert.alert("Invalid Bid", "Please enter a valid bid amount.");
             return;
         }
         const newBid = parseFloat(bidAmount);
-        if (newBid <= basePrice) {
-            Alert.alert("Invalid Bid", `Your bid must be higher than the current price of $${basePrice.toFixed(2)}.`);
+        if (newBid <= currentPrice) {
+            Alert.alert("Invalid Bid", `Your bid must be higher than the current price of $${currentPrice.toFixed(2)}.`);
             return;
         }
         setSubmitting(true);
         try {
-            const updatedAuction = await placeBid(auctionId, newBid);
-            setAuction(updatedAuction);
-            Alert.alert("Success", "Your bid has been placed successfully.");
+            await placeBid(auctionId, newBid);
+            Alert.alert("Success", "Your bid has been placed successfully.", [
+                { text: "OK", onPress: () => loadData() }
+            ]);
         } catch (err) {
-            if (err.message && err.message.includes("Setup payment method not found")) {
+            if (err.message && err.message.includes("payment method")) {
                 Alert.alert(
                     "Payment Method Required",
-                    "A payment method is required to place a bid. Please add one now.",
+                    "A payment method is required to place a bid.",
                     [
-                        {
-                            text: "Ok",
-                            onPress: () => router.push('/(app)/addPaymentMethod')
-                        }
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Add Card", onPress: () => router.push('/(app)/addPaymentMethod') }
                     ]
                 );
             } else {
@@ -83,6 +75,32 @@ const AuctionDetailPage = () => {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleCancelAuction = () => {
+        Alert.alert(
+            "Confirm Cancellation",
+            "Are you sure you want to cancel this auction? This cannot be undone.",
+            [
+                { text: "Keep Auction", style: "cancel" },
+                {
+                    text: "Cancel", style: "destructive",
+                    onPress: async () => {
+                        setCancelling(true);
+                        try {
+                            await cancelAuction(auctionId);
+                            Alert.alert("Auction Cancelled", "The auction has been successfully cancelled.", [
+                                { text: "OK", onPress: () => router.back() }
+                            ]);
+                        } catch (err) {
+                            Alert.alert("Error", err.message || "Could not cancel the auction.");
+                        } finally {
+                            setCancelling(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const BidItem = ({ item }) => (
@@ -100,7 +118,9 @@ const AuctionDetailPage = () => {
     if (!auction) return null;
 
     const hasBids = auction.bids && auction.bids.length > 0;
-    const displayPrice = hasBids ? (auction.current_price || auction.start_price) : auction.start_price;
+    const displayPrice = hasBids ? (auction.current_highest_bid || auction.start_price) : auction.start_price;
+    const isOwner = user && auction && user.username === auction.seller_username;
+    const isCancellable = isOwner && auction.status === 'ACTIVE';
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -109,42 +129,54 @@ const AuctionDetailPage = () => {
                     <Text style={styles.domainName}>{auction.domain_name}</Text>
                     <View style={styles.detailRow}><Text style={styles.detailLabel}>Seller:</Text><Text style={styles.detailValue}>{auction.seller_username}</Text></View>
                     <View style={styles.detailRow}><Text style={styles.detailLabel}>Ends on:</Text><Text style={styles.detailValue}>{new Date(auction.end_time).toLocaleString()}</Text></View>
-
                     <View style={styles.divider} />
-
                     <View style={styles.detailRow}>
                         <Text style={styles.priceLabel}>{hasBids ? "Highest Bid" : "Starting Price"}</Text>
                         <Text style={styles.priceValue}>${parseFloat(displayPrice || 0).toFixed(2)}</Text>
                     </View>
 
-                    <View style={styles.divider} />
+                    {/* ✅ MODIFICATION START: Bidding UI is now conditional */}
+                    {/* This block only renders if the auction is ACTIVE and the viewer is NOT the owner */}
+                    {auction.status === 'ACTIVE' && !isOwner && (
+                        <>
+                            <View style={styles.divider} />
+                            <View style={styles.biddingContainer}>
+                                <TextInput
+                                    style={styles.bidInput} value={bidAmount} onChangeText={setBidAmount}
+                                    keyboardType="numeric" returnKeyType="done" onSubmitEditing={handlePlaceBid}
+                                />
+                                <TouchableOpacity
+                                    style={[styles.bidButton, submitting && styles.bidButtonDisabled]}
+                                    onPress={handlePlaceBid} disabled={submitting}
+                                >
+                                    {submitting
+                                        ? <ActivityIndicator color={COLORS.textOnPrimaryGreen} size="small" />
+                                        : <Text style={styles.bidButtonText}>Bid</Text>
+                                    }
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    )}
+                    {/* ✅ MODIFICATION END */}
 
-                    <View style={styles.biddingContainer}>
-                        <TextInput
-                            style={styles.bidInput}
-                            value={bidAmount}
-                            onChangeText={setBidAmount}
-                            keyboardType="numeric"
-                            returnKeyType="done"
-                            onSubmitEditing={handlePlaceBid}
-                        />
-                        <TouchableOpacity
-                            style={[styles.bidButton, submitting && styles.bidButtonDisabled]}
-                            onPress={handlePlaceBid}
-                            disabled={submitting}
+                    {isCancellable && (
+                        <Pressable
+                            style={({ pressed }) => [globalStyles.button, styles.cancelButton, cancelling && globalStyles.buttonDisabled, pressed && { backgroundColor: '#d10000' }]}
+                            onPress={handleCancelAuction}
+                            disabled={cancelling}
                         >
-                            {submitting
-                                ? <ActivityIndicator color={COLORS.textOnPrimaryGreen} size="small" />
-                                : <Text style={styles.bidButtonText}>Bid</Text>
+                            {cancelling
+                                ? <ActivityIndicator color={COLORS.white} />
+                                : <Text style={[globalStyles.buttonText, { color: COLORS.white }]}>Cancel Auction</Text>
                             }
-                        </TouchableOpacity>
-                    </View>
+                        </Pressable>
+                    )}
                 </View>
 
                 <View style={[globalStyles.card, styles.bidHistoryCard]}>
                     <Text style={styles.cardTitle}>Bid History</Text>
                     {hasBids ? (
-                        auction.bids.map(bid => <BidItem key={bid.id} item={bid} />)
+                        auction.bids.map((bid, index) => <BidItem key={index} item={bid} />) // Use index as key for bids which have no unique id
                     ) : (
                         <Text style={styles.emptyBidsText}>No bids yet. Be the first!</Text>
                     )}
@@ -164,41 +196,12 @@ const styles = StyleSheet.create({
     divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.md },
     priceLabel: { fontSize: FONT_SIZES.lg, color: COLORS.textPrimary, fontWeight: 'bold' },
     priceValue: { fontSize: FONT_SIZES.xl, fontWeight: 'bold', color: COLORS.primaryGreen },
-    biddingContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: SPACING.xs,
-    },
-    bidInput: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: BORDER_RADIUS.md,
-        paddingHorizontal: SPACING.md,
-        fontSize: FONT_SIZES.lg,
-        backgroundColor: COLORS.darkBg,
-        color: COLORS.textPrimary,
-        marginRight: SPACING.sm,
-        height: 48,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    bidButton: {
-        backgroundColor: COLORS.primaryGreen,
-        paddingHorizontal: SPACING.lg,
-        borderRadius: BORDER_RADIUS.md,
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: 48,
-    },
-    bidButtonDisabled: {
-        backgroundColor: COLORS.disabled,
-    },
-    bidButtonText: {
-        color: COLORS.textOnPrimaryGreen,
-        fontSize: FONT_SIZES.lg,
-        fontWeight: 'bold',
-    },
+    biddingContainer: { flexDirection: "row", alignItems: "center", marginTop: SPACING.xs },
+    bidInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, fontSize: FONT_SIZES.lg, backgroundColor: COLORS.darkBg, color: COLORS.textPrimary, marginRight: SPACING.sm, height: 48, fontWeight: 'bold', textAlign: 'center' },
+    bidButton: { backgroundColor: COLORS.primaryGreen, paddingHorizontal: SPACING.lg, borderRadius: BORDER_RADIUS.md, justifyContent: 'center', alignItems: 'center', height: 48 },
+    bidButtonDisabled: { backgroundColor: COLORS.disabled },
+    bidButtonText: { color: COLORS.textOnPrimaryGreen, fontSize: FONT_SIZES.lg, fontWeight: 'bold' },
+    cancelButton: { backgroundColor: COLORS.error, borderColor: COLORS.error, marginTop: SPACING.lg },
     cardTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', color: COLORS.primaryGreen, marginBottom: SPACING.md },
     bidHistoryCard: { marginTop: SPACING.lg },
     bidItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.border },

@@ -40,6 +40,15 @@ export const getActiveAuctions = async () => {
     return handleResponse(response);
 };
 
+export const getMySellingAuctions = async () => {
+    const headers = await getHeaders();
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.getMySellingAuctions}`, {
+        method: 'GET',
+        headers,
+    });
+    return handleResponse(response);
+};
+
 export const getAuctionDetails = async (auctionId) => {
     const headers = await getHeaders();
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.getAuctionDetails(auctionId)}`, {
@@ -55,6 +64,16 @@ export const placeBid = async (auctionId, amount) => {
         method: 'POST',
         headers,
         body: JSON.stringify({ amount }),
+    });
+    return handleResponse(response);
+};
+
+
+export const cancelAuction = async (auctionId) => {
+    const headers = await getHeaders();
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.cancelAuction(auctionId)}`, {
+        method: 'DELETE',
+        headers,
     });
     return handleResponse(response);
 };

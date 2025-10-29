@@ -49,7 +49,7 @@ function AuthProvider({ children }) {
 }
 
 export default function RootLayout() {
-    const stripePublishableKey = "pk_test_51SDBqI1ARGDSynsvbJDGnfmzQUCVWMlLily7xvpC0fuAjEQjvwGtFuMcuvqs79X9iSAumqmIgRl0JXDtxqj0cyvw00Q0UeTBjW";
+    const stripePublishableKey = "pk_test_51SCqaKAYB1NbYIdnRx4d3ykwfpaiUAkHMHrvGFQf8zFWNWuYVVCAcp4NRoKTw6RR2DYQ8hhbmxE5RnPRlnkxjU3u00YAPlX5SG";
     return (
         <StripeProvider publishableKey={stripePublishableKey}>
             <AuthProvider>

@@ -78,6 +78,17 @@ const ProfilePage = () => {
           <Pressable style={globalStyles.button} onPress={loadUserDetails}>
             <Text style={globalStyles.buttonText}>Try Again</Text>
           </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              globalStyles.button,
+              styles.logoutButton,
+              { marginTop: SPACING.md },
+              pressed && { backgroundColor: COLORS.error }
+            ]}
+            onPress={handleLogout}
+          >
+            <Text style={globalStyles.buttonText}>Logout</Text>
+          </Pressable>
         </View>
       );
     }
@@ -92,23 +103,39 @@ const ProfilePage = () => {
               <Text style={styles.emailText}>{user.email}</Text>
             </View>
           </View>
+
           <View style={styles.divider} />
-          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/transactions')}>
-            <Ionicons name="receipt-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
-            <Text style={styles.menuItemText}>View Transactions</Text>
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/editProfile')}>
+            <Ionicons name="create-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>Edit User Details</Text>
+            <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
+          </Pressable>
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/addPaymentMethod')}>
+            <Ionicons name="card-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>Manage Payment</Text>
             <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
           </Pressable>
 
-          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/addPaymentMethod')}>
-            <Ionicons name="card-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
-            <Text style={styles.menuItemText}>Manage Payment Method</Text>
+          <View style={styles.divider} />
+          <Text style={styles.sectionTitle}>My Marketplace</Text>
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/myAuctions')}>
+            <Ionicons name="hammer-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>My Auctions</Text>
             <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
           </Pressable>
-          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/editProfile')}>
-             <Ionicons name="create-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
-             <Text style={styles.menuItemText}>Edit User Details</Text>
-             <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
-           </Pressable>
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/myListings')}>
+            <Ionicons name="pricetags-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>My Listings</Text>
+            <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
+          </Pressable>
+
+          <View style={styles.divider} />
+          <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/transactions')}>
+            <Ionicons name="receipt-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>Transaction History</Text>
+            <Ionicons name="chevron-forward-outline" size={ICON_SIZES.lg} color={COLORS.textSecondary} />
+          </Pressable>
+
         </View>
 
         <Pressable
@@ -147,11 +174,11 @@ const styles = StyleSheet.create({
   usernameText: { fontSize: FONT_SIZES.xl, fontWeight: 'bold', color: COLORS.textPrimary },
   emailText: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary },
   divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.md },
+  sectionTitle: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary, fontWeight: '600', textTransform: 'uppercase', marginBottom: SPACING.sm, marginLeft: SPACING.xs },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.sm },
   menuIcon: { marginRight: SPACING.md },
   menuItemText: { flex: 1, fontSize: FONT_SIZES.md, color: COLORS.textPrimary },
   logoutButton: { marginTop: SPACING.xl, backgroundColor: COLORS.error, borderColor: COLORS.error, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.sm, marginHorizontal: SPACING.md },
 });
 
 export default ProfilePage;
