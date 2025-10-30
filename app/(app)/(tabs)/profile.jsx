@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../_layout';
 
@@ -94,7 +94,7 @@ const ProfilePage = () => {
     }
 
     return (
-      <View style={styles.contentContainer}>
+      <ScrollView style={styles.contentContainer}>
         <View style={globalStyles.card}>
           <View style={styles.profileInfoRow}>
             <Ionicons name="person-circle-outline" size={SPACING.xxl + SPACING.lg} color={COLORS.primaryGreen} />
@@ -103,6 +103,17 @@ const ProfilePage = () => {
               <Text style={styles.emailText}>{user.email}</Text>
             </View>
           </View>
+          <Pressable
+            style={({ pressed }) => [
+              globalStyles.button,
+              styles.logoutButton,
+              pressed && { backgroundColor: COLORS.error }
+            ]}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={FONT_SIZES.lg} color={COLORS.textOnPrimaryGreen} style={{ marginRight: SPACING.sm }} />
+            <Text style={globalStyles.buttonText}>Logout</Text>
+          </Pressable>
 
           <View style={styles.divider} />
           <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/editProfile')}>
@@ -117,7 +128,6 @@ const ProfilePage = () => {
           </Pressable>
 
           <View style={styles.divider} />
-          <Text style={styles.sectionTitle}>My Marketplace</Text>
           <Pressable style={styles.menuItem} onPress={() => router.push('/(app)/myAuctions')}>
             <Ionicons name="hammer-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} style={styles.menuIcon} />
             <Text style={styles.menuItemText}>My Auctions</Text>
@@ -138,18 +148,8 @@ const ProfilePage = () => {
 
         </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            globalStyles.button,
-            styles.logoutButton,
-            pressed && { backgroundColor: COLORS.error }
-          ]}
-          onPress={handleLogout}
-        >
-          <Ionicons name="log-out-outline" size={FONT_SIZES.lg} color={COLORS.textOnPrimaryGreen} style={{ marginRight: SPACING.sm }} />
-          <Text style={globalStyles.buttonText}>Logout</Text>
-        </Pressable>
-      </View>
+
+      </ScrollView >
     );
   };
 

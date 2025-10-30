@@ -107,14 +107,14 @@ const EditProfilePage = () => {
             color={COLORS.primaryGreen}
             onPress={() => router.back()}
           />
-          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <Text style={styles.headerTitle}>User Details</Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={[globalStyles.card, styles.cardCustom]}>
             <View style={styles.cardHeader}>
               <Ionicons name="person-circle-outline" size={ICON_SIZES.lg} color={COLORS.primaryGreen} />
-              <Text style={styles.cardHeaderText}>Edit Profile Details</Text>
+              <Text style={styles.cardHeaderText}>User Details</Text>
             </View>
             <View style={globalStyles.divider} />
 
