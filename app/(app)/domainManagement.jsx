@@ -218,17 +218,6 @@ const DomainManagementPage = () => {
                 </View>
 
                 <View style={globalStyles.divider} />
-
-                {/* Placeholder for future settings like Domain Lock, Auth Code, etc. */}
-                <View style={[styles.settingRow, { opacity: 0.5 }]}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.settingTitle}>Transfer Lock</Text>
-                        <Text style={styles.settingDesc}>
-                            Prevent unauthorized transfers (Coming Soon).
-                        </Text>
-                    </View>
-                    <Switch value={true} disabled={true} />
-                </View>
             </View>
         );
     };

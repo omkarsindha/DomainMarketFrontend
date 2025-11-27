@@ -7,19 +7,21 @@ import { COLORS } from '../../src/constants/colors';
 import { FONT_SIZES, SPACING, BORDER_RADIUS } from '../../src/constants/dimensions';
 import { globalStyles } from '../../src/styles/globalStyles';
 import { formatBidTimestamp } from '../../src/utils/timeUtils';
-
+// Auction Detail Page Component
 const AuctionDetailPage = () => {
+    // Get auctionId
     const { auctionId } = useLocalSearchParams();
     const router = useRouter();
 
-    const [auction, setAuction] = useState(null);
-    const [bidAmount, setBidAmount] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [cancelling, setCancelling] = useState(false);
-    const [error, setError] = useState('');
-    const [user, setUser] = useState(null);
+    const [auction, setAuction] = useState(null);// Stores auction data
+    const [bidAmount, setBidAmount] = useState('');// Stores user's bid input
+    const [loading, setLoading] = useState(true);// Loading indicator for data fetch
+    const [submitting, setSubmitting] = useState(false);// Loading indicator for placing a bid
+    const [cancelling, setCancelling] = useState(false);// Loading indicator for cancelling auction
+    const [error, setError] = useState('');// Error message
+    const [user, setUser] = useState(null);// Stores current user info
 
+// Function to load auction details and user info
     const loadData = useCallback(async () => {
         setLoading(true);
         setError('');
@@ -30,6 +32,7 @@ const AuctionDetailPage = () => {
             ]);
             setAuction(auctionData);
             setUser(userData);
+            // Calculate the next suggested bid
             const basePrice = Math.max(auctionData.current_highest_bid || 0, auctionData.start_price || 0);
             const nextBid = basePrice > 0 ? basePrice + 1.00 : auctionData.start_price;
             setBidAmount(String(nextBid.toFixed(2)));
@@ -39,27 +42,30 @@ const AuctionDetailPage = () => {
             setLoading(false);
         }
     }, [auctionId]);
-
+    // Reload data every time we open screen
     useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
-
+    // Function to handle placing a bid
     const handlePlaceBid = async () => {
         const currentPrice = Math.max(auction.current_highest_bid || 0, auction.start_price || 0);
+       // Validate bid input
         if (!bidAmount || isNaN(parseFloat(bidAmount))) {
             Alert.alert("Invalid Bid", "Please enter a valid bid amount.");
             return;
         }
+        // Check if bid is higher than current price
         const newBid = parseFloat(bidAmount);
         if (newBid <= currentPrice) {
             Alert.alert("Invalid Bid", `Your bid must be higher than the current price of $${currentPrice.toFixed(2)}.`);
             return;
         }
-        setSubmitting(true);
+        setSubmitting(true);// Show submitting loader
         try {
             await placeBid(auctionId, newBid);
             Alert.alert("Success", "Your bid has been placed successfully.", [
                 { text: "OK", onPress: () => loadData() }
             ]);
         } catch (err) {
+            // Handle payment method errors separately
             if (err.message && err.message.includes("payment method")) {
                 Alert.alert(
                     "Payment Method Required",
