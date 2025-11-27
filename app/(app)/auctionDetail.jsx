@@ -141,8 +141,7 @@ const AuctionDetailPage = () => {
                         <Text style={styles.priceValue}>${parseFloat(displayPrice || 0).toFixed(2)}</Text>
                     </View>
 
-                    {/* ✅ MODIFICATION START: Bidding UI is now conditional */}
-                    {/* This block only renders if the auction is ACTIVE and the viewer is NOT the owner */}
+                   
                     {auction.status === 'ACTIVE' && !isOwner && (
                         <>
                             <View style={styles.divider} />
@@ -163,7 +162,7 @@ const AuctionDetailPage = () => {
                             </View>
                         </>
                     )}
-                    {/* ✅ MODIFICATION END */}
+                  
 
                     {isCancellable && (
                         <Pressable

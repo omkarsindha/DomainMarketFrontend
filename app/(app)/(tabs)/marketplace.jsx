@@ -1,3 +1,4 @@
+//imports
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,42 +10,48 @@ import { COLORS } from '../../../src/constants/colors';
 import { FONT_SIZES, SPACING, ICON_SIZES } from '../../../src/constants/dimensions';
 import { globalStyles } from '../../../src/styles/globalStyles';
 
+// Main Marketplace screen component
 const MarketplacePage = () => {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('Auctions');
-  const [auctions, setAuctions] = useState([]);
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const router = useRouter();// router used to navigate to other pages
+  const [activeTab, setActiveTab] = useState('Auctions');//tab selection
+  const [auctions, setAuctions] = useState([]);// stores list of auction items
+  const [listings, setListings] = useState([]);// stores list of bazaar listings
+  const [loading, setLoading] = useState(true);// control for loading spinner
+  const [error, setError] = useState('');//stores err msgs
 
+  //function to load data depending on the tab selected
   const loadData = useCallback(async () => {
-    setLoading(true);
-    setError('');
+    setLoading(true);// starts showing the loader
+    setError('');//clear any old errors
     try {
+       // If Auctions tab is selected → load auctions
       if (activeTab === 'Auctions') {
         const data = await getActiveAuctions();
-        setAuctions(data || []);
+        setAuctions(data || []);// Save auctions
       } else {
+         // If Bazaar tab is selected → load listings
         const data = await getActiveListings();
-        setListings(data || []);
+        setListings(data || []);// Save listings
       }
     } catch (err) {
       console.error('Marketplace load error:', err);
-      setError(err.message || 'Could not load marketplace data.');
+      setError(err.message || 'Could not load marketplace data.');// Show error
     } finally {
       setLoading(false);
     }
   }, [activeTab]);
-
+// Reload data automatically whenever page is focused
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
-
+ // Component for Auction card
   const AuctionItem = ({ item }) => {
-    const hasBids = item.bids && item.bids.length > 0;
+    const hasBids = item.bids && item.bids.length > 0;// Check if someone has bid
+// Determine price: highest bid OR starting price
     const displayPrice = hasBids ? (item.current_price || item.start_price) : item.start_price;
 
     return (
       <TouchableOpacity
         style={globalStyles.card}
+        // Navigate to auction details page
         onPress={() => router.push({ pathname: '/(app)/auctionDetail', params: { auctionId: item.id } })}
       >
         <Text style={styles.domainName}>{item.domain_name}</Text>
@@ -59,25 +66,27 @@ const MarketplacePage = () => {
       </TouchableOpacity>
     );
   };
-
+  // Component for Bazaar listing card
   const ListingItem = ({ item }) => {
-    const priceNum = Number(item.price || 0);
-
+    const priceNum = Number(item.price || 0);// Convert price to number
+ // When user clicks Buy button
     const handleBuy = () => {
       Alert.alert(
         'Confirm Purchase',
         `Buy ${item.domain_name} for $${priceNum.toFixed(2)}?`,
         [
           { text: 'Cancel', style: 'cancel' },
+           // If user confirms purchase
           {
             text: 'Buy',
             onPress: async () => {
               try {
-                setLoading(true);
-                await purchaseListing(item.id);
+                setLoading(true);// Start loading
+                await purchaseListing(item.id);// Call backend to purchase
                 Alert.alert('Success', `You purchased ${item.domain_name}.`);
                 loadData();
               } catch (err) {
+                 // If error is related to payment card
                 console.error('Purchase error:', err);
                 const message = err?.message || 'Purchase failed.';
                 if (message.toLowerCase().includes('card')) {
@@ -93,7 +102,7 @@ const MarketplacePage = () => {
                   Alert.alert('Error', message);
                 }
               } finally {
-                setLoading(false);
+                setLoading(false);// Stop loading
               }
             }
           }

@@ -16,7 +16,7 @@ const DomainManagementPage = () => {
     const params = useLocalSearchParams();
     const domainName = params.domainName;
     const domainId = params.domainId;
-    const initialAutoRenew = params.initialAutoRenew === 'true' || params.initialAutoRenew === true;// Convert string to boolean for checking
+    const initialAutoRenew = params.initialAutoRenew === 'true';
 
     const [activeTab, setActiveTab] = useState('DNS'); // ACtive tab for'DNS' or 'Settings'
 
@@ -32,14 +32,17 @@ const DomainManagementPage = () => {
     const [error, setError] = useState('');// error msg 
 
     //splits full domain into SLD and TLD
+    //drive.google.com -> drive.google &  com
     const parseDomain = (fullDomain) => {
-        if (!fullDomain) return { sld: '', tld: '' };
+        if (!fullDomain)
+            return { sld: '', tld: '' };
         const parts = fullDomain.split('.');
-        if (parts.length < 2) return { sld: fullDomain, tld: '' };
-        const tld = parts.pop();
-        const sld = parts.join('.');
-        return { sld, tld };
-    };
+        if (parts.length < 2)
+            return { sld: fullDomain, tld: '' };
+        const tld = parts.pop();     // get the last element in array and remoe it from list
+        const sld = parts.join('.'); // join strings in array using .
+        return { sld, tld };
+    };
 
     const { sld, tld } = parseDomain(domainName);
 
