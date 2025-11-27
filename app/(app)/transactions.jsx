@@ -78,7 +78,6 @@ const TransactionsPage = () => {
             const data = await fetchMyTransactions();
             setTransactions(data);
         } catch (err) {
-            console.error("Failed to fetch transactions:", err);
             setError(err.message || "Could not load transaction history.");
         } finally {
             setLoading(false);

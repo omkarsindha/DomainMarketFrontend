@@ -61,7 +61,11 @@ const HomePage = () => {
       style={styles.domainItemContainer}
       onPress={() => router.push({
         pathname: '/(app)/domainManagement',
-        params: { domainName: item.domain_name }
+        params: {
+          domainName: item.domain_name,
+          domainId: item.id,
+          initialAutoRenew: item.auto_renew_enabled
+        }
       })}
     >
       <View style={styles.domainInfo}>

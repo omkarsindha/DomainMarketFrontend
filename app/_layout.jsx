@@ -6,7 +6,7 @@ import { FavoritesProvider } from '../src/context/FavoritesContext';
 import { getToken, removeToken as serviceRemoveToken } from '../src/services/authService';
 import { COLORS } from '../src/constants/colors';
 import { StripeProvider } from '@stripe/stripe-react-native';
-
+// import { usePushNotifications } from '../src/hooks/usePushNotifications';
 
 const AuthContext = createContext(null);
 
@@ -65,7 +65,7 @@ function Layout() {
     const { userToken, isLoading } = useAuth();
     const segments = useSegments();
     const router = useRouter();
-
+    // usePushNotifications();
     useEffect(() => {
         if (isLoading) return;
 

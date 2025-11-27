@@ -36,3 +36,6 @@ app-example
 out.txt
 t.py
 test.py
+google-services.json
+GoogleService-Info.plist
+android

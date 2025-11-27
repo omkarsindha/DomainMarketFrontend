@@ -36,4 +36,7 @@ export const API_ENDPOINTS = {
 
     getDnsRecords: (sld, tld) => `/domains/manage/${sld}/${tld}/dns`,
     updateDnsRecords: (sld, tld) => `/domains/manage/${sld}/${tld}/dns/update`,
+
+    registerDevice: '/users/register-device',
+    getNotifications: '/users/notifications',
 };

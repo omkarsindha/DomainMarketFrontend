@@ -118,6 +118,29 @@ export const fetchTrendingTldsService = async () => {
     return data;
 };
 
+export const toggleAutoRenew = async (domainId, enable) => {
+    const token = await getToken();
+    if (!token) throw new Error("Authentication required.");
+
+    const response = await fetch(
+        `${API_BASE_URL}/domains/${domainId}/auto-renew?enable=${enable}`,
+        {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+        }
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.detail || "Failed to update auto-renew settings.");
+    }
+    return data;
+};
+
+
 export const fetchMyDomains = async () => {
     const token = await getToken();
     if (!token) {

@@ -157,3 +157,37 @@ export const removePaymentMethod = async (username) => {
     }
     return responseData;
 };
+
+export const registerDeviceToken = async (fcmToken) => {
+    const token = await getToken();
+    if (!token) return; // Don't register if not logged in
+
+    try {
+        await fetch(`${API_BASE_URL}${API_ENDPOINTS.registerDevice}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ token: fcmToken }),
+        });
+    } catch (error) {
+        console.error("Failed to register device token:", error);
+        // Fail silently, don't block the user
+    }
+};
+
+export const fetchNotifications = async () => {
+    const token = await getToken();
+    if (!token) throw new Error("Authentication required.");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.getNotifications}`, {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch notifications");
+    }
+    return await response.json();
+};

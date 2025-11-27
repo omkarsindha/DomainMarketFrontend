@@ -134,8 +134,6 @@ const DomainBuyPage = () => {
             );
 
         } catch (err) {
-            console.error('Payment Process Error:', err);
-
             // logic to handle no card on file error
             if (err.message && err.message.includes("A card is required")) {
                 Alert.alert(
