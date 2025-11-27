@@ -8,27 +8,30 @@ import { COLORS } from '../../src/constants/colors';
 import { FONT_SIZES, SPACING, ICON_SIZES, BORDER_RADIUS } from '../../src/constants/dimensions';
 import { globalStyles } from '../../src/styles/globalStyles';
 
+//DNS record types
 const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT'];
 
 const DomainManagementPage = () => {
+    //getting domain name, id and auto renew 
     const params = useLocalSearchParams();
     const domainName = params.domainName;
     const domainId = params.domainId;
-    const initialAutoRenew = params.initialAutoRenew === 'true' || params.initialAutoRenew === true;
+    const initialAutoRenew = params.initialAutoRenew === 'true' || params.initialAutoRenew === true;// Convert string to boolean for checking
 
-    const [activeTab, setActiveTab] = useState('DNS'); // 'DNS' or 'Settings'
+    const [activeTab, setActiveTab] = useState('DNS'); // ACtive tab for'DNS' or 'Settings'
 
     // DNS State
-    const [dnsRecords, setDnsRecords] = useState([]);
-    const [loadingDns, setLoadingDns] = useState(false);
-    const [savingDns, setSavingDns] = useState(false);
+    const [dnsRecords, setDnsRecords] = useState([]);//holds current DNS records fetched from API
+    const [loadingDns, setLoadingDns] = useState(false);// indicates when DNS records are fetched
+    const [savingDns, setSavingDns] = useState(false);//indicated DNS records are saved
 
     // Settings State
-    const [isAutoRenew, setIsAutoRenew] = useState(initialAutoRenew);
-    const [togglingRenew, setTogglingRenew] = useState(false);
+    const [isAutoRenew, setIsAutoRenew] = useState(initialAutoRenew);//toggle for auto renew
+    const [togglingRenew, setTogglingRenew] = useState(false);// Tracks loading state when toggling auto-renew 
 
-    const [error, setError] = useState('');
+    const [error, setError] = useState('');// error msg 
 
+    //splits full domain into SLD and TLD
     const parseDomain = (fullDomain) => {
         if (!fullDomain) return { sld: '', tld: '' };
         const parts = fullDomain.split('.');
@@ -41,33 +44,34 @@ const DomainManagementPage = () => {
     const { sld, tld } = parseDomain(domainName);
 
     // --- DNS Logic ---
-
+    // Load DNS records from backend API
     const loadDnsRecords = useCallback(async () => {
-        if (!sld || !tld) return;
-        setLoadingDns(true);
-        setError('');
+        if (!sld || !tld) return;// If domain is invalid, skip
+        setLoadingDns(true);// Show loading spinner
+        setError('');// Clear previous errors
         try {
+            // Fetch records
             const data = await getDnsRecords(sld, tld);
             setDnsRecords(data.map((rec, index) => ({ ...rec, clientId: `${Date.now()}-${index}` })));
         } catch (err) {
-            setError(err.message || "An unknown error occurred while loading DNS records.");
+            setError(err.message || "An unknown error occurred while loading DNS records.");// Display error message
         } finally {
-            setLoadingDns(false);
+            setLoadingDns(false);// Hide loading spinner
         }
     }, [sld, tld]);
-
+    // Reload DNS tab when active
     useFocusEffect(useCallback(() => {
         if (activeTab === 'DNS') {
             loadDnsRecords();
         }
     }, [activeTab, loadDnsRecords]));
-
+    // Update a specific field of a DNS record
     const handleRecordChange = (index, field, value) => {
         const updatedRecords = [...dnsRecords];
         updatedRecords[index][field] = value;
         setDnsRecords(updatedRecords);
     };
-
+    // Add a new empty DNS record to the list
     const handleAddNewRecord = () => {
         const newRecord = {
             clientId: `${Date.now()}-new-${dnsRecords.length}`,
@@ -79,16 +83,17 @@ const DomainManagementPage = () => {
         };
         setDnsRecords([...dnsRecords, newRecord]);
     };
-
+    // Delete a DNS record
     const handleDeleteRecord = (index) => {
         const updatedRecords = dnsRecords.filter((_, i) => i !== index);
         setDnsRecords(updatedRecords);
     };
-
+    // Save updated DNS records to API
     const handleSaveDnsChanges = async () => {
         setSavingDns(true);
         setError('');
         try {
+             // Validate all fields before saving
             for (const record of dnsRecords) {
                 if (!record.hostname?.trim() || !record.record_type?.trim() || !record.address?.trim()) {
                     throw new Error("All fields (Host, Type, Value) are required for each record.");
